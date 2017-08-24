@@ -1,6 +1,6 @@
-from snakemake import snakemake
 import sys
 import argparse
+from snakemake import snakemake
 from .helper import base_name, dir_name, join_path
 from .helper import is_nonempty_file, print_logger
 from .version import __version__
@@ -11,6 +11,9 @@ MY_PKG_NAME = 'MrY'
 
 SPECIES_SUPPORTED = ['Human', 'Mouse', 'Zebrafish']
 ORG_SUPPORTED = ['Gencode', 'Ensemble']
+INSTALL_TARGETS = ['fasta', 'gtf', 'gff',
+                   'aligner_bowtie', 'aligner_star',
+                   'all']
 
 '''
 - subcommands: https://docs.python.org/3/library/argparse.html#sub-commands
@@ -104,18 +107,19 @@ def get_argument_parser():
     parser_install = subparsers.add_parser(
         'install',
         parents=[parser],
+        usage='yan install target [Input] [Output] [Run-time]',
         help=('Perform installation.'))
+    parser_install.add_argument(
+        "--target",
+        default=None, nargs=1, choices=INSTALL_TARGETS,
+        required=True,
+        help=('Target to install. '))
     parser_install.set_defaults(func=do_install)
     # List
     parser_list = subparsers.add_parser(
         'list',
         parents=[parser],
         help=('List installed references.'))
-    # parser_list.add_argument(
-    #     "root_dir",
-    #     # required=True,
-    #     help=('Root directory where references '
-    #           'to be listed.'))
     parser_list.set_defaults(func=do_list)
 
     return(parser)
@@ -128,11 +132,17 @@ def main():
     if args.verbose >= 3:
         print(args)
 
-    if args.func and args.root_dir:
+    if 'func' not in args:
+        p.print_help()
+        sys.exit(1)
+
+    if args.root_dir:
         args.func(args)
     else:
-        # print_logger('Specify directory to install or list references.')
         p.print_help()
+        print()
+        print_logger(('Specify directory to '
+                      'install or list references.'))
 
 
 if __name__ == '__main__':
