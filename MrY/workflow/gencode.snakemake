@@ -1,0 +1,153 @@
+from MrY import join_path, base_name
+
+
+'''
+todo: adapt snakemake workflow to new structure design
+'''
+GENOME = 'human'
+RELEASE = 26
+
+ROOTDIR = '/ifs/home/yy1533/SHARED_DB/gencode'
+RELEASEDIR = join_path(ROOTDIR, GENOME, 'release_{}'.format(RELEASE))
+
+aligner_dir = join_path(RELEASEDIR, 'aligner_index')
+
+
+workdir: RELEASEDIR
+
+rule all:
+    input:
+        '.done_setup_folder',
+        '.done_download_gtf',
+        '.done_download_gff',
+        '.done_download_fasta',
+        '.done_aligner_index_bowtie2'
+
+rule aligner_index_bowtie2:
+    input:
+        '.done_aligner_index_bowtie2'
+
+
+rule cleanall:
+    input: RELEASEDIR
+    run:
+        shell('rm -rf {input}')
+
+rule cleanall_soft:
+    input:
+        '.done_setup_folder',
+        '.done_download_gtf',
+        '.done_download_gff',
+        '.done_download_fasta',
+        '.done_aligner_index_bowtie2'
+    run:
+        for f in {input}:
+            shell('rm {f}')
+
+
+rule setup_folder:
+    output:
+        dir_fa = join_path(
+            ROOTDIR, GENOME, 'release_{}'.format(RELEASE), 'fasta'),
+        dir_gtf = join_path(
+            ROOTDIR, GENOME, 'release_{}'.format(RELEASE), 'gtf'),
+        dir_gff = join_path(
+            ROOTDIR, GENOME, 'release_{}'.format(RELEASE), 'gff3'),
+        flag = '.done_setup_folder'
+    shell:
+        """
+        mkdir -p {output.dir_fa}
+        mkdir -p {output.dir_gtf}
+        mkdir -p {output.dir_gff}
+        touch {output.flag}
+        """
+
+
+# ftp://ftp.sanger.ac.uk/pub/gencode/Gencode_mouse/release_M14/gencode.vM14.annotation.gtf.gz
+# ftp://ftp.sanger.ac.uk/pub/gencode/Gencode_human/release_26/gencode.v26.annotation.gtf.gz
+rule download_gtf:
+    input:
+        '.done_setup_folder'
+    output:
+        flag = '.done_download_gtf',
+        gtf = join_path(rules.setup_folder.output.dir_gtf,
+                        'gencode.v{}.annotation.gtf.gz'.format(RELEASE))
+    run:
+        FTPFORMAT = '{prefix}/Gencode_{specie}/release_{series}/gencode.v{version}.{suffix}'
+        ftp_gtf = FTPFORMAT.format(prefix='ftp://ftp.sanger.ac.uk/pub/gencode',
+                                   specie=GENOME, series=RELEASE, version=RELEASE,
+                                   suffix='annotation.gtf.gz')
+        shell(
+            """
+            wget {ftp_gtf} -O {output.gtf} -nv
+            """)
+        shell('touch {output.flag}')
+
+# ftp://ftp.sanger.ac.uk/pub/gencode/Gencode_human/release_26/gencode.v26.annotation.gff3.gz
+rule download_gff:
+    input:
+        '.done_setup_folder'
+    output:
+        flag = '.done_download_gff',
+        gff = join_path(rules.setup_folder.output.dir_gff,
+                        'gencode.v{}.annotation.gff3.gz'.format(RELEASE))
+    run:
+        FTPFORMAT = '{prefix}/Gencode_{specie}/release_{series}/gencode.v{version}.{suffix}'
+        ftp_gff = FTPFORMAT.format(prefix='ftp://ftp.sanger.ac.uk/pub/gencode',
+                                   specie=GENOME, series=RELEASE, version=RELEASE,
+                                   suffix='annotation.gff3.gz')
+        shell(
+            """
+            wget {ftp_gff} -O {output.gff} -nv
+            """)
+        shell('touch {output.flag}')
+
+
+# ftp://ftp.sanger.ac.uk/pub/gencode/Gencode_human/release_26/GRCh38.primary_assembly.genome.fa.gz
+rule download_fasta:
+    input:
+        '.done_setup_folder'
+    output:
+        flag = '.done_download_fasta',
+        fa = join_path(rules.setup_folder.output.dir_fa,
+                       'GRC{letter}38.primary_assembly.genome.fa.gz'.format(letter=GENOME[0]))
+    run:
+        FTPFORMAT = '{prefix}/Gencode_{specie}/release_{series}/GRC{letter}38.{suffix}'
+        ftp_fa = FTPFORMAT.format(prefix='ftp://ftp.sanger.ac.uk/pub/gencode',
+                                  specie=GENOME,
+                                  series=RELEASE,
+                                  letter=GENOME[0],
+                                  suffix='primary_assembly.genome.fa.gz')
+        shell(
+            """
+            wget {ftp_fa} -O {output.fa} -nv
+            """)
+        shell('touch {output.flag}')
+
+
+rule zcat_fa_gz:
+    input:
+        fa = rules.download_fasta.output.fa
+    output:
+        fa = join_path(rules.setup_folder.output.dir_fa,
+                       'GRC{letter}38.primary_assembly.genome.fa'.format(letter=GENOME[0]))
+    run:
+        shell('zcat {input.fa} -f > {output.fa}')
+
+
+rule cook_aligner_index_bowtie2:
+    input:
+        flag = '.done_download_fasta',
+        fa = rules.zcat_fa_gz.output.fa
+    output:
+        flag = '.done_aligner_index_bowtie2',
+        dir = join_path(aligner_dir, 'bowtie2')
+    threads: 42
+    message: 'Build genome-index for aligner Bowtie2'
+    run:
+        build_prefix = join_path(
+            output.dir, base_name(rules.zcat_fa_gz.output.fa))
+        shell("""
+            bowtie2-build {input.fa} {build_prefix} --threads {threads}
+            """)
+        shell('touch {output.flag}')

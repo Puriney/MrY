@@ -4,10 +4,10 @@ import io
 from setuptools import setup, find_packages, Command
 from os import path
 
-root = 'Mr.Y'
-name = 'Mr.Y'
+root = 'MrY'
+name = 'MrY'
 
-exec(open("Mr.Y/version.py").read())
+exec(open("MrY/version.py").read())
 
 here = path.abspath(path.dirname(__file__))
 description = ('Mr.Y -- Management of references at YanaiLab')
@@ -53,6 +53,7 @@ class CleanCommand(Command):
             raise OSError(error_msg)
         else:
             os.system('rm -rf ./dist ./build ./*.egg-info ')
+
 
 setup(
     name=name,
@@ -112,7 +113,7 @@ setup(
 
     # data
     package_data={
-        'Mr.Y': [
+        'MrY': [
             'template/*',  # config.yaml, etc
             'workflow/*'  # snakemake workflow
         ]
@@ -122,9 +123,8 @@ setup(
 
     entry_points={
         'console_scripts': [
-
-            # ('celseq2-slim = '
-            #  'celseq2.slim:main'),
+            ('yan = '
+             'MrY:main'),
         ],
     },
 
