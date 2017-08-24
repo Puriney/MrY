@@ -10,6 +10,7 @@ MY_PKG_NAME = 'MrY'
 
 
 SPECIES_SUPPORTED = ['Human', 'Mouse', 'Zebrafish']
+ORG_SUPPORTED = ['Gencode', 'Ensemble']
 
 '''
 - subcommands: https://docs.python.org/3/library/argparse.html#sub-commands
@@ -38,16 +39,22 @@ def get_argument_parser():
     g_input = parser.add_argument_group('Input')
     g_input.add_argument(
         "--specie",
-        default=None, nargs=1, choices=SPECIES_SUPPORTED,
-        help=('Common name of supported genome. '))
+        default=None, nargs='*', choices=SPECIES_SUPPORTED,
+        help=('Common name of supported genome (e.g. Human). '))
+    g_input.add_argument(
+        "--org",
+        default=None, nargs='*', choices=ORG_SUPPORTED,
+        help=('Download references from speficied orgnization '
+              '(e.g. Gencode). '))
     g_input.add_argument(
         "--assembly",
         default=None, nargs='*',
-        help=('Genome assembly version.'))
+        help=('Genome assembly version (e.g. GRCh38). '))
     g_input.add_argument(
         "--release",
         default=None, nargs='*',
-        help=('Release name of genome/transcriptome.'))
+        help=('Release name/number of genome assembly '
+              '(e.g. 27). '))
     g_output = parser.add_argument_group('Output')
     g_output.add_argument(
         "--root-dir", "--od",
@@ -118,11 +125,13 @@ def main():
     p = get_argument_parser()
     args = p.parse_args()
 
-    if args.verbose >= 3: print(args)
+    if args.verbose >= 3:
+        print(args)
 
     if args.func and args.root_dir:
         args.func(args)
     else:
+        # print_logger('Specify directory to install or list references.')
         p.print_help()
 
 
