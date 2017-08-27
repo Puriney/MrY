@@ -123,7 +123,7 @@ setup(
 
     entry_points={
         'console_scripts': [
-            ('yan = '
+            ('yun = '
              'MrY:main'),
         ],
     },

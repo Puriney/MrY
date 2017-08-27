@@ -37,11 +37,11 @@ def get_argument_parser():
     parser = argparse.ArgumentParser(
         description=desc,
         add_help=False,
-        usage='yan [Subcommands] [Input] [Output] [Run-time]')
+        usage='yun [Subcommands] [Input] [Output] [Run-time]')
 
     g_input = parser.add_argument_group('Input')
     g_input.add_argument(
-        "--specie",
+        "--species",
         default=None, nargs='*', choices=SPECIES_SUPPORTED,
         help=('Common name of supported genome (e.g. Human). '))
     g_input.add_argument(
@@ -107,11 +107,11 @@ def get_argument_parser():
     parser_install = subparsers.add_parser(
         'install',
         parents=[parser],
-        usage='yan install target [Input] [Output] [Run-time]',
+        usage='yun install target [Input] [Output] [Run-time]',
         help=('Perform installation.'))
     parser_install.add_argument(
         "--target",
-        default=None, nargs=1, choices=INSTALL_TARGETS,
+        default='all', nargs=1, choices=INSTALL_TARGETS,
         required=True,
         help=('Target to install. '))
     parser_install.set_defaults(func=do_install)
