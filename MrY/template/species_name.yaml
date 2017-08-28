@@ -4,6 +4,8 @@ common_scientific_name_pairs:
   zebrafish: danio_rerio
   roundworm: caenorhabditis_elegans
   brewer_yeast: saccharomyces_cerevisiae
+  mycobacterium_tuberculosis: mycobacterium_tuberculosis
+
 
 assembly_pairs:
   human:
@@ -16,3 +18,30 @@ assembly_pairs:
     - WBcel235
   brewer_yeast:
     - R64-1-1
+
+
+supported_spcies:
+  human:
+    scientific_name: homo_sapiens
+    assembly: GRCh38, GRCh37
+    gencode:
+      support: True
+      release: 27, 26
+    ensembl:
+      support: True
+      release: 90
+    ncbi:
+      support: False
+      release: None
+  mouse:
+    scientific_name: mus_musculus
+    assembly: GRCm38
+    gencode:
+      support: True
+      release: M15
+    ensembl:
+      support: True
+      release: 90
+    ncbi:
+      support: False
+      release: None
