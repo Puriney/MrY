@@ -5,7 +5,6 @@ import sys
 
 def main(args):
     # species=None, assembly=None, release=None, savetodir=None):
-
     snakefile = get_workflow_fpath(fname='gencode.snakemake')
     success = snakemake(
         snakefile=snakefile,

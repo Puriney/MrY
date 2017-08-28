@@ -10,10 +10,11 @@ from .install_gencode import main as do_install_gencode
 MY_PKG_NAME = 'MrY'
 
 
-SPECIES_SUPPORTED = ['Human', 'Mouse', 'Zebrafish']
-ORG_SUPPORTED = ['GENCODE', 'Ensemble']
-INSTALL_TARGETS = ['fasta', 'gtf', 'gff',
-                   'aligner_bowtie', 'aligner_star',
+SPECIES_SUPPORTED = ['human', 'mouse', 'zebrafish']
+ORG_SUPPORTED = ['GENCODE', 'Ensembl']
+INSTALL_TARGETS = ['task_genome_fasta',
+                   'task_annotation_gtf', 'task_annotation_gff3',
+                   'task_aligner_index_bowtie2', 'aligner_star',
                    'all']
 
 '''
@@ -23,7 +24,8 @@ INSTALL_TARGETS = ['fasta', 'gtf', 'gff',
 
 
 def do_install(args):
-    if args.org == 'GENCODE':
+    if len(args.org) == 1 and args.org[0] == 'GENCODE':
+        print_logger('Install GENCODE...')
         do_install_gencode(args)
 
 
@@ -37,7 +39,7 @@ def get_argument_parser():
     parser = argparse.ArgumentParser(
         description=desc,
         add_help=False,
-        usage='yun [Subcommands] [Input] [Output] [Run-time]')
+        usage='yun [Subcommands] [Input] [Output] [Run-time] [Server]')
 
     g_input = parser.add_argument_group('Input')
     g_input.add_argument(
@@ -61,8 +63,7 @@ def get_argument_parser():
     g_output = parser.add_argument_group('Output')
     g_output.add_argument(
         "--root-dir",
-        required=True,
-        default=None,
+        default='.',
         help='Root directory to save all references.')
 
     g_runtime = parser.add_argument_group('Run-time')
@@ -70,7 +71,7 @@ def get_argument_parser():
                            action="store_true",
                            help="Do not execute anything.")
     g_runtime.add_argument("--nolock",
-                           action="store_true",
+                           action="store_true", default=True,
                            help="Do not lock the working directory")
     g_runtime.add_argument("--unlock",
                            action="store_true",
@@ -93,6 +94,13 @@ def get_argument_parser():
         action="store_true",
         help="Do not check for incomplete output files.")
 
+    g_cluster = parser.add_mutually_exclusive_group()
+    g_cluster.add_argument(
+        "--cluster", "-c",
+        metavar="CMD",
+        help=("Execute pipeline by taking tasks as jobs running in cluster, "
+              "e.g. --cluster 'qsub -cwd -j y'"))
+
     parser.add_argument(
         "--version",
         action="version",
@@ -107,7 +115,7 @@ def get_argument_parser():
     parser_install = subparsers.add_parser(
         'install',
         parents=[parser],
-        usage='yun install target [Input] [Output] [Run-time]',
+        usage='yun install target [Input] [Output] [Run-time] [Server]',
         help=('Perform installation.'))
     parser_install.add_argument(
         "--target",

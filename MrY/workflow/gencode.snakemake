@@ -4,13 +4,13 @@ from MrY import print_logger
 
 import sys
 
-SPECIES = config.get('species', 'human')
+SPECIES = config.get('species', 'human')[0]
 ASSEMBLY = config.get('assembly', 'GRCh38')
 RELEASE = config.get('release', 26)
 ROOTDIR = config.get('root_dir', '.')
 ORG = 'GENCODE'
-if config.get('org', None) != ORG:
-    sys.exit(1)
+# if config.get('org', ['']) != ORG:
+#     sys.exit(1)
 
 
 '''
@@ -203,9 +203,6 @@ rule download_genome_fasta:
 
 rule zcat_fa_gz:
     input:
-        # fa = jpath('genome', ORG,
-        #            '{assembly}', '{release_id}',
-        #            REMOTE_GENOME_FNAME_CODE.format('{assembly}')),
         fa = rules.download_genome_fasta.output.fa,
     output:
         fa = jpath(dir_name(rules.download_genome_fasta.output.fa),
@@ -258,7 +255,7 @@ rule cook_aligner_index_bowtie2:
         print_logger('Prefix of bowtie2 index is: {}'.format(build_prefix))
 
 
-rule aligner_index_bowtie2:
+rule task_aligner_index_bowtie2:
     input:
         expand(jpath(proj_dir, '_flag',
                      flag_fname_code.format(sp=SPECIES, org=ORG,

@@ -124,7 +124,7 @@ setup(
     entry_points={
         'console_scripts': [
             ('yun = '
-             'MrY:main'),
+             'MrY.__init__:main'),
         ],
     },
 
