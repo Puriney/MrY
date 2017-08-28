@@ -10,7 +10,7 @@ MY_PKG_NAME = 'MrY'
 
 
 SPECIES_SUPPORTED = ['Human', 'Mouse', 'Zebrafish']
-ORG_SUPPORTED = ['Gencode', 'Ensemble']
+ORG_SUPPORTED = ['GENCODE', 'Ensemble']
 INSTALL_TARGETS = ['fasta', 'gtf', 'gff',
                    'aligner_bowtie', 'aligner_star',
                    'all']
@@ -60,8 +60,8 @@ def get_argument_parser():
               '(e.g. 27). '))
     g_output = parser.add_argument_group('Output')
     g_output.add_argument(
-        "--root-dir", "--od",
-        # required=True,
+        "--root-dir",
+        required=True,
         default=None,
         help='Root directory to save all references.')
 

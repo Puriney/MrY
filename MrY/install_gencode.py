@@ -1,7 +1,9 @@
 from MrY import get_workflow_fpath
 from snakemake import snakemake
+import sys
 
-def main(specie=None, assembly=None, release=None, savetodir=None):
+def main(args):
+# species=None, assembly=None, release=None, savetodir=None):
 
     snakefile = get_workflow_fpath(fname='gencode.snakemake')
     success = snakemake(
