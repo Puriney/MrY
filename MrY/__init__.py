@@ -6,6 +6,7 @@ from .helper import is_nonempty_file, print_logger
 from .version import __version__
 from .locate_workflow import get_workflow_fpath
 
+from .install_gencode import main as do_install_gencode
 MY_PKG_NAME = 'MrY'
 
 
@@ -22,9 +23,8 @@ INSTALL_TARGETS = ['fasta', 'gtf', 'gff',
 
 
 def do_install(args):
-    print(args.root_dir)
-    print(args.specie)
-    pass
+    if args.org == 'GENCODE':
+        do_install_gencode(args)
 
 
 def do_list(args):

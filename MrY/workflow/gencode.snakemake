@@ -2,12 +2,15 @@ from MrY import join_path as jpath
 from MrY import base_name, dir_name
 from MrY import print_logger
 
+import sys
 
 SPECIES = config.get('species', 'human')
 ASSEMBLY = config.get('assembly', 'GRCh38')
 RELEASE = config.get('release', 26)
-ROOTDIR = config.get('root_dir', '/Users/yunyan/Downloads/test')
+ROOTDIR = config.get('root_dir', '.')
 ORG = 'GENCODE'
+if config.get('org', None) != ORG:
+    sys.exit(1)
 
 
 '''
