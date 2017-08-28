@@ -2,3 +2,17 @@ common_scientific_name_pairs:
   human: homo_sapiens
   mouse: mus_musculus
   zebrafish: danio_rerio
+  roundworm: caenorhabditis_elegans
+  brewer_yeast: saccharomyces_cerevisiae
+
+assembly_pairs:
+  human:
+    - GRCh38
+  mouse:
+    - GRCm38
+  zebrafish:
+    - GRCz10
+  roundworm:
+    - WBcel235
+  brewer_yeast:
+    - R64-1-1

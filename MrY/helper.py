@@ -91,8 +91,10 @@ def rmfile(fpath):
         pass
 
 
-def base_name(fpath, ext=None):
+def base_name(fpath, ext=None, auto=True):
     bs = os.path.basename(fpath)
+    if not auto:
+        return(bs)
     if not (ext is None or ext == ""):
         bs = bs.replace(ext, '')
     bs = os.path.splitext(bs)[0]

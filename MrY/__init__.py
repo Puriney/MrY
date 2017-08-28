@@ -1,5 +1,6 @@
 import sys
 import argparse
+import yaml
 from snakemake import snakemake
 from .helper import base_name, dir_name, join_path
 from .helper import is_nonempty_file, print_logger
@@ -12,8 +13,11 @@ from .install_ensembl import main as do_install_ensembl
 
 MY_PKG_NAME = 'MrY'
 
+with open(get_species_name_fpath(fname='species_name.yaml'), 'rt') as fin:
+    dict_name_common2sci = yaml.load(fin).get('common_scientific_name_pairs',
+                                              dict())
 
-SPECIES_SUPPORTED = ['human', 'mouse', 'zebrafish']
+SPECIES_SUPPORTED = dict_name_common2sci.keys()
 ORG_SUPPORTED = ['GENCODE', 'Ensembl']
 INSTALL_TARGETS = ['task_genome_fasta',
                    'task_annotation_gtf', 'task_annotation_gff3',

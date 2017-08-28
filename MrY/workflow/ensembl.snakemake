@@ -4,6 +4,8 @@ from MrY import print_logger
 from MrY import get_species_name_fpath
 import sys
 import yaml
+from ftplib import FTP
+
 
 with open(get_species_name_fpath(fname='species_name.yaml'), 'rt') as fin:
     dict_name_common2sci = yaml.load(fin).get('common_scientific_name_pairs',
@@ -27,7 +29,8 @@ REMOTE_GENOME_FPATH_CODE = ('ftp://ftp.ensembl.org/pub/release-{rel}/fasta/'
                             '{sp}/'
                             'dna/'
                             '{Csp}.{asb}.dna.primary_assembly.fa.gz')
-LOCAL_GENOME_FNAME_CODE = '{asb}.dna.primary_assembly.fa.gz'
+# primary_assembly > toplevel
+LOCAL_GENOME_FNAME_CODE = '{asb}.dna.fa.gz'
 REMOTE_GTF_FPATH_CODE = ('ftp://ftp.ensembl.org/pub/release-{rel}/gtf/'
                          '{sp}/'
                          '{Csp}.{asb}.{rel}.gtf.gz')
@@ -40,13 +43,31 @@ LOCAL_GFF_FNAME_CODE = 'ensembl.{asb}.{rel}.gff3.gz'
 flag_fname_code = '_{sp}_{org}_{asb}_{rel}_done_{task}'
 
 
+def _grab_avail_genome(query_link):
+    ensembl_ftp_site = 'ftp.ensembl.org'
+    ftp = FTP(ensembl_ftp_site)
+    ftp.login()
+    query_fname = base_name(query_link)
+    # ftp://ftp.ensembl.org/pub/release-90/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz
+    query_fpath = query_link[6:].replace(ensembl_ftp_site, '')
+    # /pub/release-90/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz
+    query_dir = dir_name(query_fpath)
+    # /pub/release-90/fasta/homo_sapiens/dna/
+    query_fname = base_name(query_fpath)
+    # Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz
+    avail_fname = list(map(base_name, ftp.nlst(query_dir)))
+    if query_fname in avail_fname:
+        return(query_link)
+    return(query_link.replace('primary_assembly', 'toplevel'))
+
+
+'''
+Snakemake workflow
+'''
 workdir: ROOTDIR
-
-
-def _capitalize(x):
-    return('{}{}'.format(x[:1].upper(), x[1:]))
-
-
+'''
+All expected results
+'''
 rule all:
     input:
         expand(jpath(ROOTDIR, '{species}', 'annotation', ORG,
@@ -77,7 +98,9 @@ rule all:
                          task='alignerIndex-Bowtie2')),
                zip, species=SPECIES, assembly=ASSEMBLY, release_id=RELEASE),
 
-
+'''
+Setup folder structure
+'''
 rule setup_folder:
     output:
         dir_genome = expand(jpath(ROOTDIR, '{species}', 'genome', ORG,
@@ -127,7 +150,9 @@ rule setup_folder:
         for f in output.flags:
             shell('touch {f}')
 
-
+'''
+Download GTF and GFF3 of annotation
+'''
 rule download_annotation_gtf:
     input:
         flag = jpath(ROOTDIR, '{species}', '_flag',
@@ -165,4 +190,150 @@ rule task_annotation_gtf:
                      '{assembly}', 'release_{release_id}',
                      LOCAL_GTF_FNAME_CODE.format(
                          asb='{assembly}', rel='{release_id}')),
+               zip, species=SPECIES, assembly=ASSEMBLY, release_id=RELEASE),
+
+
+rule download_annotation_gff3:
+    input:
+        flag = jpath(ROOTDIR, '{species}', '_flag',
+                     flag_fname_code.format(sp='{species}', org=ORG,
+                                            asb='{assembly}',
+                                            rel='{release_id}',
+                                            task='setupdir')),
+    output:
+        gff3 = jpath(ROOTDIR, '{species}', 'annotation', ORG,
+                     '{assembly}', 'release_{release_id}',
+                     LOCAL_GFF_FNAME_CODE.format(asb='{assembly}',
+                                                 rel='{release_id}')),
+        flag = jpath(ROOTDIR, '{species}', '_flag',
+                     flag_fname_code.format(sp='{species}', org=ORG,
+                                            asb='{assembly}',
+                                            rel='{release_id}',
+                                            task='download-gff3')),
+    run:
+        stream_sp_sci = dict_name_common2sci.get(wildcards.species, None)
+        remote_gff3 = REMOTE_GFF_FPATH_CODE.format(
+            sp=stream_sp_sci,
+            asb=wildcards.assembly,
+            rel=wildcards.release_id,
+            Csp=stream_sp_sci.capitalize())
+        shell(
+            """
+            wget {remote_gff3} -O {output.gff3} -nv && touch {output.flag}
+            """)
+        print_logger('Download GFF3: {} to {}'.format(remote_gff3,
+                                                      output.gff3))
+
+
+rule task_annotation_gff3:
+    input:
+        expand(jpath(ROOTDIR, '{species}', 'annotation', ORG,
+                     '{assembly}', 'release_{release_id}',
+                     LOCAL_GFF_FNAME_CODE.format(
+                         asb='{assembly}', rel='{release_id}')),
+               zip, species=SPECIES, assembly=ASSEMBLY, release_id=RELEASE),
+
+'''
+Download genome.fasta.gz (primary assembly) and gunzip
+'''
+rule download_genome_fasta:
+    input:
+        flag = jpath(ROOTDIR, '{species}', '_flag',
+                     flag_fname_code.format(sp='{species}', org=ORG,
+                                            asb='{assembly}',
+                                            rel='{release_id}',
+                                            task='setupdir')),
+    output:
+        fa = jpath(ROOTDIR, '{species}', 'genome', ORG,
+                   '{assembly}', 'release_{release_id}',
+                   LOCAL_GENOME_FNAME_CODE.format(
+                       asb='{assembly}')),
+        flag = jpath(ROOTDIR, '{species}', '_flag',
+                     flag_fname_code.format(sp='{species}', org=ORG,
+                                            asb='{assembly}',
+                                            rel='{release_id}',
+                                            task='download-genomeFasta')),
+    run:
+        stream_sp_sci = dict_name_common2sci.get(wildcards.species, None)
+        remote_fa = REMOTE_GENOME_FPATH_CODE.format(
+            sp=stream_sp_sci,
+            asb=wildcards.assembly,
+            rel=wildcards.release_id,
+            Csp=stream_sp_sci.capitalize())
+        remote_fa_avail = _grab_avail_genome(remote_fa)
+        local_fa_fpath = jpath(dir_name(output.fa),
+                               base_name(remote_fa_avail, auto=False))
+        shell('''
+            wget {remote_fa_avail} -O {local_fa_fpath} -nv && \
+            ln -s {local_fa_fpath} {output.fa} && \
+            touch -h {local_fa_fpath} && \
+            touch {output.flag}
+            ''')
+
+
+rule zcat_fa_gz:
+    input:
+        fa = rules.download_genome_fasta.output.fa,
+    output:
+        fa = jpath(dir_name(rules.download_genome_fasta.output.fa),
+                   base_name(rules.download_genome_fasta.output.fa,
+                             ext='gz')),
+        flag = jpath(ROOTDIR, '{species}', '_flag',
+                     flag_fname_code.format(sp='{species}', org=ORG,
+                                            asb='{assembly}',
+                                            rel='{release_id}',
+                                            task='gunzipped-genomeFasta')),
+    run:
+        shell('zcat {input.fa} -f > {output.fa} && touch {output.flag}')
+
+
+rule task_genome_fasta:
+    input:
+        expand(jpath(ROOTDIR, '{species}', 'genome', ORG,
+                     '{assembly}', 'release_{release_id}',
+                     LOCAL_GENOME_FNAME_CODE.format(
+                         asb='{assembly}')),
+               zip, species=SPECIES, assembly=ASSEMBLY, release_id=RELEASE),
+        expand(jpath(ROOTDIR, '{species}', '_flag',
+                     flag_fname_code.format(sp='{species}', org=ORG,
+                                            asb='{assembly}',
+                                            rel='{release_id}',
+                                            task='gunzipped-genomeFasta')),
+               zip, species=SPECIES, assembly=ASSEMBLY, release_id=RELEASE),
+
+'''
+Build index of aligner - Bowtie2
+'''
+rule cook_aligner_index_bowtie2:
+    input:
+        fa = rules.zcat_fa_gz.output.fa,
+    output:
+        flag = jpath(ROOTDIR, '{species}', '_flag',
+                     flag_fname_code.format(sp='{species}', org=ORG,
+                                            asb='{assembly}',
+                                            rel='{release_id}',
+                                            task='alignerIndex-Bowtie2')),
+    threads: 42
+    run:
+        savetodir = jpath(ROOTDIR, wildcards.species, 'aligner_index',
+                          'bowtie2', ORG,
+                          wildcards.assembly,
+                          'release_{}'.format(wildcards.release_id))
+        build_prefix = jpath(savetodir, base_name(input.fa, ext='fa'))
+        shell("""
+            bowtie2-build {input.fa} {build_prefix} \
+            --threads {threads} \
+            --seed 42 \
+            && touch {output.flag}
+            """)
+        print_logger('Prefix of bowtie2 index is: {}'.format(build_prefix))
+
+
+rule task_aligner_index_bowtie2:
+    input:
+        expand(jpath(ROOTDIR, '{species}', '_flag',
+                     flag_fname_code.format(sp='{species}', org=ORG,
+                                            asb='{assembly}',
+                                            rel='{release_id}',
+                                            task='alignerIndex-Bowtie2')),
                zip, species=SPECIES, assembly=ASSEMBLY, release_id=RELEASE),
