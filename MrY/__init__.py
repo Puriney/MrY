@@ -5,8 +5,11 @@ from .helper import base_name, dir_name, join_path
 from .helper import is_nonempty_file, print_logger
 from .version import __version__
 from .locate_workflow import get_workflow_fpath
+from .locate_preset import get_species_name_fpath
 
 from .install_gencode import main as do_install_gencode
+from .install_ensembl import main as do_install_ensembl
+
 MY_PKG_NAME = 'MrY'
 
 
@@ -27,6 +30,9 @@ def do_install(args):
     if len(args.org) == 1 and args.org[0] == 'GENCODE':
         print_logger('Install GENCODE...')
         do_install_gencode(args)
+    elif len(args.org) == 1 and args.org[0] == 'Ensembl':
+        print_logger('Install Ensembl...')
+        do_install_ensembl(args)
 
 
 def do_list(args):

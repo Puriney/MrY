@@ -1,0 +1,4 @@
+common_scientific_name_pairs:
+  human: homo_sapiens
+  mouse: mus_musculus
+  zebrafish: danio_rerio
