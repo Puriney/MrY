@@ -3,6 +3,7 @@ from MrY import base_name, dir_name
 from MrY import print_logger
 from MrY import get_species_name_fpath
 import sys
+import os
 import yaml
 from ftplib import FTP
 
@@ -190,6 +191,15 @@ rule download_annotation_gtf:
             touch {output.flag}
             """)
         print_logger('Download GTF: {} to {}'.format(remote_gtf, output.gtf))
+
+
+rule task_annotation_gtf:
+    input:
+        expand(jpath(ROOTDIR, '{species}', 'annotation', ORG,
+                     '{assembly}', 'release_{release_id}',
+                     LOCAL_GTF_FNAME_CODE.format(
+                         asb='{assembly}', rel='{release_id}')),
+               zip, species=SPECIES, assembly=ASSEMBLY, release_id=RELEASE),
 
 
 rule download_annotation_gff3:
@@ -418,13 +428,15 @@ rule cook_aligner_index_star:
                           'star', ORG,
                           wildcards.assembly,
                           'release_{}'.format(wildcards.release_id))
+        outFileNamePrefix = savetodir + os.sep
         shell('''
             STAR --runThreadN {threads} \
             --runMode genomeGenerate \
             --genomeDir {savetodir} \
             --genomeFastaFiles {input.fa} \
-            --sjdbGTFfile {input.gtf} && \
-            touch {output.flag}
+            --sjdbGTFfile {input.gtf} \
+            --outFileNamePrefix {outFileNamePrefix} \
+            && touch {output.flag}
         ''')
 
 

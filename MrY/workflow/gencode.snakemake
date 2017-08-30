@@ -3,8 +3,13 @@ from MrY import base_name, dir_name
 from MrY import print_logger
 
 import sys
+import os
 
-SPECIES = config.get('species', 'human')[0]
+if set(config.get('species')) and \
+        set(config.get('species')) - set(['human', 'mouse']):
+    sys.exit(1)
+
+SPECIES = config.get('species', ['human'])
 ASSEMBLY = config.get('assembly', ['GRCh38'])
 RELEASE = config.get('release', [26])
 ROOTDIR = config.get('root_dir', '.')
@@ -24,69 +29,93 @@ todo: python web to build a chain-map: assembly ~ release to save a yaml file
 REMOTE_FTP_PREFIX = ('ftp://ftp.sanger.ac.uk/pub/gencode/Gencode_{}/'
                      'release_{}')
 REMOTE_GENOME_FNAME_CODE = '{}.primary_assembly.genome.fa.gz'
+
 REMOTE_GTF_FNAME_CODE = 'gencode.v{}.primary_assembly.annotation.gtf.gz'
+LOCAL_GTF_FNAME_CODE = REMOTE_GTF_FNAME_CODE
+
 REMOTE_GFF_FNAME_CODE = 'gencode.v{}.primary_assembly.annotation.gff3.gz'
+LOCAL_GFF_FNAME_CODE = REMOTE_GFF_FNAME_CODE
 
 flag_fname_code = '_{sp}_{org}_{asb}_{rel}_done_{task}'
 
 '''
 Snakemake workflow
 '''
-workdir: jpath(ROOTDIR, SPECIES)
-proj_dir = jpath(ROOTDIR, SPECIES)
-
+workdir: jpath(ROOTDIR)
 
 rule all:
     input:
-        expand(jpath(proj_dir, 'annotation', ORG,
+        expand(jpath(ROOTDIR, '{species}', 'annotation', ORG,
                      '{assembly}', 'release_{release_id}',
                      REMOTE_GTF_FNAME_CODE.format('{release_id}')),
-               zip, assembly=ASSEMBLY, release_id=RELEASE),
-        expand(jpath(proj_dir, 'annotation', ORG,
+               zip, species=SPECIES, assembly=ASSEMBLY, release_id=RELEASE),
+        expand(jpath(ROOTDIR, '{species}', 'annotation', ORG,
                      '{assembly}', 'release_{release_id}',
                      REMOTE_GFF_FNAME_CODE.format('{release_id}')),
-               zip, assembly=ASSEMBLY, release_id=RELEASE),
-        expand(jpath(proj_dir, 'genome', ORG,
+               zip, species=SPECIES, assembly=ASSEMBLY, release_id=RELEASE),
+        expand(jpath(ROOTDIR, '{species}', 'genome', ORG,
                      '{assembly}', 'release_{release_id}',
                      REMOTE_GENOME_FNAME_CODE.format('{assembly}')),
-               zip, assembly=ASSEMBLY, release_id=RELEASE),
-        expand(jpath(proj_dir, '_flag',
-                     flag_fname_code.format(sp=SPECIES, org=ORG,
+               zip, species=SPECIES, assembly=ASSEMBLY, release_id=RELEASE),
+        expand(jpath(ROOTDIR, '{species}', '_flag',
+                     flag_fname_code.format(sp='{species}', org=ORG,
                                             asb='{assembly}',
                                             rel='{release_id}',
                                             task='gunzipped-genomeFasta')),
-               zip, assembly=ASSEMBLY, release_id=RELEASE),
-        expand(jpath(proj_dir, '_flag',
-                     flag_fname_code.format(sp=SPECIES, org=ORG,
+               zip, species=SPECIES, assembly=ASSEMBLY, release_id=RELEASE),
+        expand(jpath(ROOTDIR, '{species}', '_flag',
+                     flag_fname_code.format(sp='{species}', org=ORG,
                                             asb='{assembly}',
                                             rel='{release_id}',
                                             task='alignerIndex-Bowtie2')),
-               zip, assembly=ASSEMBLY, release_id=RELEASE),
+               zip, species=SPECIES, assembly=ASSEMBLY, release_id=RELEASE),
+        expand(jpath(ROOTDIR, '{species}', '_flag',
+                     flag_fname_code.format(sp='{species}', org=ORG,
+                                            asb='{assembly}',
+                                            rel='{release_id}',
+                                            task='alignerIndex-STAR')),
+               zip, species=SPECIES, assembly=ASSEMBLY, release_id=RELEASE),
 
 
 rule setup_folder:
     output:
-        dir_genome = expand(jpath(proj_dir, 'genome', ORG,
+        dir_genome = expand(jpath(ROOTDIR, '{species}', 'genome', ORG,
                                   '{assembly}', 'release_{release_id}'),
-                            zip, assembly=ASSEMBLY, release_id=RELEASE),
-        dir_annotation = expand(jpath(proj_dir, 'annotation', ORG,
+                            zip,
+                            species=SPECIES,
+                            assembly=ASSEMBLY,
+                            release_id=RELEASE),
+        dir_annotation = expand(jpath(ROOTDIR, '{species}', 'annotation', ORG,
                                       '{assembly}', 'release_{release_id}'),
-                                zip, assembly=ASSEMBLY, release_id=RELEASE),
-        dir_bowtie = expand(jpath(proj_dir, 'aligner_index', 'bowtie2', ORG,
+                                zip,
+                                species=SPECIES,
+                                assembly=ASSEMBLY,
+                                release_id=RELEASE),
+        dir_bowtie = expand(jpath(ROOTDIR, '{species}',
+                                  'aligner_index', 'bowtie2', ORG,
                                   '{assembly}', 'release_{release_id}'),
-                            zip, assembly=ASSEMBLY, release_id=RELEASE),
-        dir_star = expand(jpath(proj_dir, 'aligner_index', 'star', ORG,
+                            zip,
+                            species=SPECIES,
+                            assembly=ASSEMBLY,
+                            release_id=RELEASE),
+        dir_star = expand(jpath(ROOTDIR, '{species}',
+                                'aligner_index', 'star', ORG,
                                 '{assembly}', 'release_{release_id}'),
-                          zip, assembly=ASSEMBLY, release_id=RELEASE),
-        dir_flag = jpath(proj_dir, '_flag'),
+                          zip,
+                          species=SPECIES,
+                          assembly=ASSEMBLY,
+                          release_id=RELEASE),
+        dir_flag = expand(jpath(ROOTDIR, '{species}', '_flag'),
+                          species=SPECIES),
 
-        flags = expand(jpath(proj_dir, '_flag',
-                             flag_fname_code.format(sp=SPECIES,
+        flags = expand(jpath(ROOTDIR, '{species}', '_flag',
+                             flag_fname_code.format(sp='{species}',
                                                     org=ORG,
                                                     asb='{assembly}',
                                                     rel='{release_id}',
                                                     task='setupdir')),
-                       zip, assembly=ASSEMBLY, release_id=RELEASE),
+                       zip,
+                       species=SPECIES, assembly=ASSEMBLY, release_id=RELEASE),
     run:
         for d in [output.dir_genome, output.dir_annotation, output.dir_bowtie,
                   output.dir_star, output.dir_flag]:
@@ -97,25 +126,25 @@ rule setup_folder:
 
 rule download_annotation_gtf:
     input:
-        flag = jpath(proj_dir, '_flag',
-                     flag_fname_code.format(sp=SPECIES,
+        flag = jpath(ROOTDIR, '{species}', '_flag',
+                     flag_fname_code.format(sp='{species}',
                                             org=ORG,
                                             asb='{assembly}',
                                             rel='{release_id}',
                                             task='setupdir')),
     output:
-        gtf = jpath(proj_dir, 'annotation', ORG,
+        gtf = jpath(ROOTDIR, '{species}', 'annotation', ORG,
                     '{assembly}', 'release_{release_id}',
                     REMOTE_GTF_FNAME_CODE.format('{release_id}')),
-        flag = jpath(proj_dir, '_flag',
-                     flag_fname_code.format(sp=SPECIES, org=ORG,
+        flag = jpath(ROOTDIR, '{species}', '_flag',
+                     flag_fname_code.format(sp='{species}', org=ORG,
                                             asb='{assembly}',
                                             rel='{release_id}',
                                             task='download-gtf')),
     run:
         stream_release_id = wildcards.release_id
         remote_ftp_prefix = REMOTE_FTP_PREFIX.format(
-            SPECIES, stream_release_id)
+            wildcards.species, stream_release_id)
         remote_gtf = remote_ftp_prefix + '/' + \
             REMOTE_GTF_FNAME_CODE.format(stream_release_id)
         shell(
@@ -127,31 +156,31 @@ rule download_annotation_gtf:
 
 rule task_annotation_gtf:
     input:
-        expand(jpath(proj_dir, 'annotation', ORG,
+        expand(jpath(ROOTDIR, '{species}', 'annotation', ORG,
                      '{assembly}', 'release_{release_id}',
                      REMOTE_GTF_FNAME_CODE.format('{release_id}')),
-               zip, assembly=ASSEMBLY, release_id=RELEASE),
+               zip, species=SPECIES, assembly=ASSEMBLY, release_id=RELEASE),
 
 
 rule download_annotation_gff3:
     input:
-        flag = jpath(proj_dir, '_flag',
-                     flag_fname_code.format(sp=SPECIES,
+        flag = jpath(ROOTDIR, '{species}', '_flag',
+                     flag_fname_code.format(sp='{species}',
                                             org=ORG,
                                             asb='{assembly}',
                                             rel='{release_id}',
                                             task='setupdir')),
     output:
-        gff3 = jpath(proj_dir, 'annotation', ORG,
+        gff3 = jpath(ROOTDIR, '{species}', 'annotation', ORG,
                      '{assembly}', 'release_{release_id}',
                      REMOTE_GFF_FNAME_CODE.format('{release_id}')),
-        flag = jpath(proj_dir, '_flag',
-                     flag_fname_code.format(sp=SPECIES, org=ORG,
+        flag = jpath(ROOTDIR, '{species}', '_flag',
+                     flag_fname_code.format(sp='{species}', org=ORG,
                                             asb='{assembly}',
                                             rel='{release_id}',
                                             task='download-gff3')),
     run:
-        remote_ftp_prefix = REMOTE_FTP_PREFIX.format(SPECIES,
+        remote_ftp_prefix = REMOTE_FTP_PREFIX.format(wildcards.species,
                                                      wildcards.release_id)
         remote_gff3 = remote_ftp_prefix + '/' + \
             REMOTE_GFF_FNAME_CODE.format(wildcards.release_id)
@@ -165,32 +194,86 @@ rule download_annotation_gff3:
 
 rule task_annotation_gff3:
     input:
-        expand(jpath(proj_dir, 'annotation', ORG,
+        expand(jpath(ROOTDIR, '{species}', 'annotation', ORG,
                      '{assembly}', 'release_{release_id}',
                      REMOTE_GFF_FNAME_CODE.format('{release_id}')),
-               zip, assembly=ASSEMBLY, release_id=RELEASE),
+               zip, species=SPECIES, assembly=ASSEMBLY, release_id=RELEASE),
 
+rule zcat_anno_gz:
+    input:
+        gtf = rules.download_annotation_gtf.output.gtf,
+        gff3 = rules.download_annotation_gff3.output.gff3,
+    output:
+        gtf = jpath(ROOTDIR, '{species}', 'annotation', ORG,
+                    '{assembly}', 'release_{release_id}',
+                    base_name(LOCAL_GTF_FNAME_CODE.format('{release_id}'),
+                              ext='gz')),
+        gff3 = jpath(ROOTDIR, '{species}', 'annotation', ORG,
+                     '{assembly}', 'release_{release_id}',
+                     base_name(LOCAL_GFF_FNAME_CODE.format('{release_id}'),
+                               ext='gz')),
+        flag = jpath(ROOTDIR, '{species}', '_flag',
+                     flag_fname_code.format(sp='{species}', org=ORG,
+                                            asb='{assembly}',
+                                            rel='{release_id}',
+                                            task='gunzipped-annotation')),
+    run:
+        print(output.gtf)
+        shell('''
+            zcat -f {input.gtf} > {output.gtf} && \
+            zcat -f {input.gff3} > {output.gff3} && \
+            touch {output.flag}''')
 
+rule task_annotation:
+    input:
+        gtfgz = expand(jpath(ROOTDIR, '{species}', 'annotation', ORG,
+                             '{assembly}', 'release_{release_id}',
+                             LOCAL_GTF_FNAME_CODE.format('{release_id}')),
+                       zip,
+                       species=SPECIES, assembly=ASSEMBLY, release_id=RELEASE),
+        gtf = expand(jpath(ROOTDIR, '{species}', 'annotation', ORG,
+                           '{assembly}', 'release_{release_id}',
+                           base_name(LOCAL_GTF_FNAME_CODE.format(
+                               '{release_id}'),
+                               ext='gz')),
+                     zip,
+                     species=SPECIES, assembly=ASSEMBLY, release_id=RELEASE),
+        gff3gz = expand(jpath(ROOTDIR, '{species}', 'annotation', ORG,
+                              '{assembly}', 'release_{release_id}',
+                              LOCAL_GFF_FNAME_CODE.format('{release_id}')),
+                        zip,
+                        species=SPECIES, assembly=ASSEMBLY, release_id=RELEASE),
+        gff3 = expand(jpath(ROOTDIR, '{species}', 'annotation', ORG,
+                            '{assembly}', 'release_{release_id}',
+                            base_name(LOCAL_GFF_FNAME_CODE.format(
+                                '{release_id}'),
+                                ext='gz')),
+                      zip,
+                      species=SPECIES, assembly=ASSEMBLY, release_id=RELEASE),
+
+'''
+Download Genome FASTA and gunzip
+'''
 rule download_genome_fasta:
     input:
-        flag = jpath(proj_dir, '_flag',
-                     flag_fname_code.format(sp=SPECIES,
+        flag = jpath(ROOTDIR, '{species}', '_flag',
+                     flag_fname_code.format(sp='{species}',
                                             org=ORG,
                                             asb='{assembly}',
                                             rel='{release_id}',
                                             task='setupdir')),
     output:
-        flag = jpath(proj_dir, '_flag',
-                     flag_fname_code.format(sp=SPECIES, org=ORG,
+        flag = jpath(ROOTDIR, '{species}', '_flag',
+                     flag_fname_code.format(sp='{species}', org=ORG,
                                             asb='{assembly}',
                                             rel='{release_id}',
                                             task='download-genomeFasta')),
-        fa = jpath(proj_dir, 'genome', ORG,
+        fa = jpath(ROOTDIR, '{species}', 'genome', ORG,
                    '{assembly}', 'release_{release_id}',
                    REMOTE_GENOME_FNAME_CODE.format('{assembly}')),
     run:
         remote_ftp_prefix = REMOTE_FTP_PREFIX.format(
-            SPECIES, wildcards.release_id)
+            wildcards.species, wildcards.release_id)
         remote_fa = remote_ftp_prefix + '/' + \
             REMOTE_GENOME_FNAME_CODE.format(wildcards.assembly)
         shell(
@@ -208,8 +291,8 @@ rule zcat_fa_gz:
         fa = jpath(dir_name(rules.download_genome_fasta.output.fa),
                    base_name(rules.download_genome_fasta.output.fa,
                              ext='gz')),
-        flag = jpath(proj_dir, '_flag',
-                     flag_fname_code.format(sp=SPECIES, org=ORG,
+        flag = jpath(ROOTDIR, '{species}', '_flag',
+                     flag_fname_code.format(sp='{species}', org=ORG,
                                             asb='{assembly}',
                                             rel='{release_id}',
                                             task='gunzipped-genomeFasta')),
@@ -219,30 +302,31 @@ rule zcat_fa_gz:
 
 rule task_genome_fasta:
     input:
-        expand(jpath(proj_dir, 'genome', ORG,
+        expand(jpath(ROOTDIR, '{species}', 'genome', ORG,
                      '{assembly}', 'release_{release_id}',
                      REMOTE_GENOME_FNAME_CODE.format('{assembly}')),
-               zip, assembly=ASSEMBLY, release_id=RELEASE),
-        expand(jpath(proj_dir, '_flag',
-                     flag_fname_code.format(sp=SPECIES, org=ORG,
+               zip, species=SPECIES, assembly=ASSEMBLY, release_id=RELEASE),
+        expand(jpath(ROOTDIR, '{species}', '_flag',
+                     flag_fname_code.format(sp='{species}', org=ORG,
                                             asb='{assembly}',
                                             rel='{release_id}',
                                             task='gunzipped-genomeFasta')),
-               zip, assembly=ASSEMBLY, release_id=RELEASE),
+               zip, species=SPECIES, assembly=ASSEMBLY, release_id=RELEASE),
 
 
 rule cook_aligner_index_bowtie2:
     input:
         fa = rules.zcat_fa_gz.output.fa,
     output:
-        flag = jpath(proj_dir, '_flag',
-                     flag_fname_code.format(sp=SPECIES, org=ORG,
+        flag = jpath(ROOTDIR, '{species}', '_flag',
+                     flag_fname_code.format(sp='{species}', org=ORG,
                                             asb='{assembly}',
                                             rel='{release_id}',
                                             task='alignerIndex-Bowtie2')),
     threads: 42
     run:
-        savetodir = jpath(proj_dir, 'aligner_index', 'bowtie2', ORG,
+        savetodir = jpath(ROOTDIR, wildcards.species,
+                          'aligner_index', 'bowtie2', ORG,
                           wildcards.assembly,
                           'release_{}'.format(wildcards.release_id))
         build_prefix = jpath(savetodir, base_name(input.fa, ext='fa'))
@@ -257,12 +341,52 @@ rule cook_aligner_index_bowtie2:
 
 rule task_aligner_index_bowtie2:
     input:
-        expand(jpath(proj_dir, '_flag',
-                     flag_fname_code.format(sp=SPECIES, org=ORG,
+        expand(jpath(ROOTDIR, '{species}', '_flag',
+                     flag_fname_code.format(sp='{species}', org=ORG,
                                             asb='{assembly}',
                                             rel='{release_id}',
                                             task='alignerIndex-Bowtie2')),
-               zip, assembly=ASSEMBLY, release_id=RELEASE),
+               zip, species=SPECIES, assembly=ASSEMBLY, release_id=RELEASE),
+
+'''
+Build index for aligner STAR
+'''
+rule cook_aligner_index_star:
+    input:
+        fa = rules.zcat_fa_gz.output.fa,
+        gtf = rules.zcat_anno_gz.output.gtf,
+    output:
+        flag = jpath(ROOTDIR, '{species}', '_flag',
+                     flag_fname_code.format(sp='{species}', org=ORG,
+                                            asb='{assembly}',
+                                            rel='{release_id}',
+                                            task='alignerIndex-STAR')),
+    threads: 42
+    run:
+        shell('STAR --version')
+        savetodir = jpath(ROOTDIR, wildcards.species, 'aligner_index',
+                          'star', ORG,
+                          wildcards.assembly,
+                          'release_{}'.format(wildcards.release_id))
+        outFileNamePrefix = savetodir + os.sep
+        shell('''
+            STAR --runThreadN {threads} \
+            --runMode genomeGenerate \
+            --genomeDir {savetodir} \
+            --genomeFastaFiles {input.fa} \
+            --sjdbGTFfile {input.gtf} \
+            --outFileNamePrefix {outFileNamePrefix} \
+            && touch {output.flag}
+        ''')
+
+rule task_aligner_index_star:
+    input:
+        expand(jpath(ROOTDIR, '{species}', '_flag',
+                     flag_fname_code.format(sp='{species}', org=ORG,
+                                            asb='{assembly}',
+                                            rel='{release_id}',
+                                            task='alignerIndex-STAR')),
+               zip, species=SPECIES, assembly=ASSEMBLY, release_id=RELEASE),
 
 
 # rule cleanall:
