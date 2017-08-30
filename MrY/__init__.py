@@ -22,8 +22,9 @@ with open(get_species_name_fpath(fname='species_name.yaml'), 'rt') as fin:
 SPECIES_SUPPORTED = dict_name_common2sci.keys()
 ORG_SUPPORTED = ['GENCODE', 'Ensembl']
 INSTALL_TARGETS = ['task_genome_fasta',
+                   'task_annotation',
                    'task_annotation_gtf', 'task_annotation_gff3',
-                   'task_aligner_index_bowtie2', 'aligner_star',
+                   'task_aligner_index_bowtie2', 'task_aligner_index_star',
                    'all']
 
 '''
