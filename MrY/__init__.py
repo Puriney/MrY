@@ -3,13 +3,15 @@ import argparse
 import yaml
 from snakemake import snakemake
 from .helper import base_name, dir_name, join_path
-from .helper import is_nonempty_file, print_logger
+from .helper import is_nonempty_file, print_logger, ymdhms
 from .version import __version__
 from .locate_workflow import get_workflow_fpath
 from .locate_preset import get_species_name_fpath
 
 from .install_gencode import main as do_install_gencode
 from .install_ensembl import main as do_install_ensembl
+
+from .list_file import list_avail
 
 MY_PKG_NAME = 'MrY'
 
@@ -40,13 +42,8 @@ def do_install(args):
 
 
 def do_list(args):
-    args.target = 'task_list_download'
-    if len(args.org) == 1 and args.org[0] == 'GENCODE':
-        print_logger('List GENCODE...')
-        do_install_gencode(args)
-    elif len(args.org) == 1 and args.org[0] == 'Ensembl':
-        print_logger('List Ensembl...')
-        do_install_ensembl(args)
+    avail_installations = list_avail(args)
+    print(avail_installations)
 
 
 def get_argument_parser():
@@ -148,6 +145,11 @@ def get_argument_parser():
         action='store_true',
         help=(('List available installations by tracking flags only, '
                'instead of searching actual files.')))
+    parser_list.add_argument(
+        "--snapshot",
+        type=str,
+        metavar='FILENAME', default='refs_all_available_' + ymdhms() + '.txt',
+        help=(('Save items list to file.')))
     parser_list.set_defaults(func=do_list)
 
     return(parser)

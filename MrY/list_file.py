@@ -6,6 +6,7 @@ import yaml
 import glob
 from tabulate import tabulate
 from collections import defaultdict, OrderedDict
+from itertools import islice
 from MrY import join_path as jpath
 from MrY import base_name, dir_name
 from MrY import print_logger
@@ -52,6 +53,7 @@ def list_avail(args):
                                        dict()).keys()
         ORG_SUPPORTED = preset.get('supported_orgs', list())
 
+    args = vars(args)
     species = args.get('species', SPECIES_SUPPORTED)
     org = args.get('org', ORG_SUPPORTED)
     assembly = args.get('assembly', [])
@@ -64,27 +66,34 @@ def list_avail(args):
     # [rootdir/species/type/org/assembly/release/file] =>
     # [[species, org, assembly, release, file]]
     genome_fa_avail = map(lambda fpath: fpath
-                          .replace(jpath(ROOTDIR, os.sep), '')
-                          .replace(jpath('genome', os.sep), '')
+                          .replace(ROOTDIR + os.sep, '')
+                          .replace('genome' + os.sep, '')
                           .split(os.sep),
                           glob.iglob(jpath(ROOTDIR, '*',
                                            'genome',
                                            '*', '*', '*',
-                                           '*.fa')))
-    genome_fagz_avail = map(lambda x: [x[:len(x) - 1], x[-1] + '.gz'],
-                            genome_fa_avail)
-
+                                                '*.fa')))
+    # genome_fagz_avail = map(lambda x: x,
+    #                         genome_fa_avail)
+    genome_fagz_avail = map(lambda fpath: fpath
+                            .replace(ROOTDIR + os.sep, '')
+                            .replace('genome' + os.sep, '')
+                            .split(os.sep),
+                            glob.iglob(jpath(ROOTDIR, '*',
+                                             'genome',
+                                             '*', '*', '*',
+                                             '*.fa.gz')))
     gtf_avail = map(lambda fpath: fpath
-                    .replace(jpath(ROOTDIR, os.sep), '')
-                    .replace(jpath('annotation', os.sep), '')
+                    .replace(ROOTDIR + os.sep, '')
+                    .replace('annotation' + os.sep, '')
                     .split(os.sep),
                     glob.iglob(jpath(ROOTDIR, '*',
                                      'annotation',
                                      '*', '*', '*',
-                                     '*.gtf.gz')))
+                                          '*.gtf.gz')))
     gff3_avail = map(lambda fpath: fpath
-                     .replace(jpath(ROOTDIR, os.sep), '')
-                     .replace(jpath('annotation', os.sep), '')
+                     .replace(ROOTDIR + os.sep, '')
+                     .replace('annotation' + os.sep, '')
                      .split(os.sep),
                      glob.iglob(jpath(ROOTDIR, '*',
                                       'annotation',
@@ -92,8 +101,8 @@ def list_avail(args):
                                       '*.gff3.gz')))
     # 1.bt2, .2.bt2, .3.bt2, .4.bt2, .rev.1.bt2, .rev.2.bt2
     bowtie_avail = map(lambda fpath: fpath
-                       .replace(jpath(ROOTDIR, os.sep), '')
-                       .replace(jpath('aligner_index', 'bowtie2', os.sep), '')
+                       .replace(ROOTDIR + os.sep, '')
+                       .replace(jpath('aligner_index', 'bowtie2') + os.sep, '')
                        .split(os.sep),
                        glob.iglob(jpath(ROOTDIR, '*',
                                         'aligner_index', 'bowtie2',
@@ -102,13 +111,6 @@ def list_avail(args):
     # to-do
     star_avail = []
 
-    species_avail = genome_fa_avail[:1][:1] + genome_fagz_avail[:1][:1] + \
-        gtf_avail[:1][:1] + gff3_avail[:1][:1] + \
-        bowtie_avail[:1][:1] + star_avail[:1][:1]
-
-    if not species_avail:
-        return(None)
-
     table = []
     species_avail_info = dict()
     species_avail_subinfo = defaultdict(list)
@@ -116,7 +118,8 @@ def list_avail(args):
                        gtf_avail, gff3_avail,
                        bowtie_avail, star_avail]:
         for info in info_avail:
-            sp, sp_org_asb_rel, fname = info[0], info[:len(info) - 1], info[-1]
+            sp, fname = info[0], info[-1]
+            sp_org_asb_rel = info[: len(info) - 1]
             sp_org_asb_rel = '/'.join(sp_org_asb_rel)
             species_avail_info[sp] = sp_org_asb_rel
             species_avail_subinfo[sp_org_asb_rel].append(fname)
@@ -125,13 +128,18 @@ def list_avail(args):
         sp_org_asb_rel_tag = tag_installed(fl)
         species_avail_subinfo[sp_org_asb_rel] = sp_org_asb_rel_tag
         table.append(sp_org_asb_rel.split('/') +
-                     sp_org_asb_rel_tag.values())
+                     list(sp_org_asb_rel_tag.values()))
 
-    table_header = ['Species', 'Org', 'Assembly', 'Release'] + \
-        sp_org_asb_rel_tag.keys()
+    table_header = ['Species', 'Org', 'Assembly', 'Release',
+                    'Genome(.fa)', 'Genome(.fa.gz)',
+                    'GTF(.gtf.gz)', 'GFF3(.gff3.gz)',
+                    'Bowtie2', 'STAR']
 
-    table = tabulate(table, headers=table_header)
-    with open(savetofile, 'w') as fout:
-        fout.write(table)
+    table = tabulate(table, headers=table_header, tablefmt="rst")
+    # table = tabulate(table)
 
+    if savetofile:
+        with open(savetofile, 'w') as fout:
+            fout.write(table)
+            fout.write('\n')
     return(table)
