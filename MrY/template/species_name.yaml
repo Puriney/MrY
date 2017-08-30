@@ -20,6 +20,11 @@ assembly_pairs:
     - R64-1-1
 
 
+supported_orgs:
+  - GENCODE
+  - Ensembl
+
+
 supported_spcies:
   human:
     scientific_name: homo_sapiens

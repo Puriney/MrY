@@ -40,8 +40,13 @@ def do_install(args):
 
 
 def do_list(args):
-    print(args.root_dir + '<<<')
-    pass
+    args.target = 'task_list_download'
+    if len(args.org) == 1 and args.org[0] == 'GENCODE':
+        print_logger('List GENCODE...')
+        do_install_gencode(args)
+    elif len(args.org) == 1 and args.org[0] == 'Ensembl':
+        print_logger('List Ensembl...')
+        do_install_ensembl(args)
 
 
 def get_argument_parser():
@@ -138,6 +143,11 @@ def get_argument_parser():
         'list',
         parents=[parser],
         help=('List installed references.'))
+    parser_list.add_argument(
+        "--soft",
+        action='store_true',
+        help=(('List available installations by tracking flags only, '
+               'instead of searching actual files.')))
     parser_list.set_defaults(func=do_list)
 
     return(parser)
