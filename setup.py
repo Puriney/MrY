@@ -15,6 +15,7 @@ description = ('Mr.Y -- Management of references at YanaiLab')
 install_requires = [
     'snakemake>=4.0.0',
     'pyyaml>=3.12, <4',
+    'tabulate>=0.7',
 ]
 
 # do not require installation if built by ReadTheDocs
