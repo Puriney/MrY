@@ -11,16 +11,16 @@ from .locate_preset import get_species_name_fpath
 from .install_gencode import main as do_install_gencode
 from .install_ensembl import main as do_install_ensembl
 
-from .list_file import list_avail
+from .list_avail import list_avail
 
 MY_PKG_NAME = 'MrY'
 
 with open(get_species_name_fpath(fname='species_name.yaml'), 'rt') as fin:
-    dict_name_common2sci = yaml.load(fin).get('common_scientific_name_pairs',
-                                              dict())
+    preset = yaml.load(fin)
+    SPECIES_SUPPORTED = preset.get('common_scientific_name_pairs',
+                                   dict()).keys()
+    ORG_SUPPORTED = preset.get('supported_orgs', list())
 
-SPECIES_SUPPORTED = dict_name_common2sci.keys()
-ORG_SUPPORTED = ['GENCODE', 'Ensembl']
 INSTALL_TARGETS = ['task_genome_fasta',
                    'task_annotation',
                    'task_annotation_gtf', 'task_annotation_gff3',
@@ -44,6 +44,8 @@ def do_install(args):
 
 def do_list(args):
     avail_installations = list_avail(args)
+    print('=' * 10)
+    print('All Available Installed Refs: ')
     print(avail_installations)
 
 
@@ -57,20 +59,20 @@ def get_argument_parser():
     g_input = parser.add_argument_group('Input')
     g_input.add_argument(
         "--species",
-        default=None, nargs='*', choices=SPECIES_SUPPORTED,
+        default=[], nargs='*', choices=SPECIES_SUPPORTED,
         help=('Common name of supported genome (e.g. Human). '))
     g_input.add_argument(
         "--org",
-        default=None, nargs='*', choices=ORG_SUPPORTED,
+        default=[], nargs='*', choices=ORG_SUPPORTED,
         help=('Download references from speficied orgnization '
               '(e.g. Gencode). '))
     g_input.add_argument(
         "--assembly",
-        default=None, nargs='*',
+        default=[], nargs='*',
         help=('Genome assembly version (e.g. GRCh38). '))
     g_input.add_argument(
         "--release",
-        default=None, nargs='*',
+        default=[], nargs='*',
         help=('Release name/number of genome assembly '
               '(e.g. 27). '))
     g_output = parser.add_argument_group('Output')
