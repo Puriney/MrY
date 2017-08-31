@@ -31,6 +31,10 @@ def ymdhms():
     return(time.strftime('%Y%m%d%H%M%S%Z', time.gmtime()))
 
 
+def ymd():
+    return(time.strftime('%Y%m%d%Z', time.gmtime()))
+
+
 def print_logger(msg):
     localtime = time.asctime(time.localtime(time.time()))
     # sys.stderr.write("[ {} ] {}\n".format(localtime, msg))
