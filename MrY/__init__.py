@@ -3,7 +3,7 @@ import argparse
 import yaml
 from snakemake import snakemake
 from .helper import base_name, dir_name, join_path
-from .helper import is_nonempty_file, print_logger, ymdhms
+from .helper import is_nonempty_file, print_logger, ymd
 from .version import __version__
 from .locate_workflow import get_workflow_fpath
 from .locate_preset import get_species_name_fpath
@@ -151,7 +151,7 @@ def get_argument_parser():
     parser_list.add_argument(
         "--snapshot",
         type=str,
-        metavar='FILENAME', default='refs_all_available_' + ymdhms() + '.txt',
+        metavar='FILENAME', default='refs_all_available_' + ymd() + '.txt',
         help=(('Save items list to file.')))
     parser_list.set_defaults(func=do_list)
 
