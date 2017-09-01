@@ -139,7 +139,7 @@ def list_avail(args):
 
     table.sort(key=itemgetter(0, 1, 2, 3),
                reverse=True)  # sort by sp-assembly-org-release
-    table = tabulate(table, headers=table_header, tablefmt="rst")
+    table = tabulate(table, headers=table_header, tablefmt="pipe")
 
     if savetofile:
         with open(savetofile, 'w') as fout:

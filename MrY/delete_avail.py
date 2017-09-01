@@ -17,7 +17,7 @@ def delete_avail(args):
     delete_flag_only = args.get('soft')
     ROOTDIR = args.get('root_dir', '.')
 
-    task = args.get('target', 'all')
+    task = args.get('target')[0]
 
     # ['rootdir/species/type/org/assembly/release']
     genome_fa_avail = glob.iglob(jpath(
@@ -60,22 +60,52 @@ def delete_avail(args):
     #                      'task_aligner_index_bowtie2', 'task_aligner_index_star',
     #                      'all']
     if task in ['all', 'task_genome_fasta']:
+        if delete_flag_only:
+            for flag in flag_avail:
+                if not args.get('dryrun') and '' in flag:
+                    print_logger('Delete {}'.format(flag))
+                    rmfile(flag)
         for d in genome_fa_avail:
             print_logger('Delete {}.'.format(d))
-            rmfolder(d)
-    if task in ['all', 'task_annotation_gtf']:
+            if not delete_flag_only and not args.get('dryrun'):
+                rmfolder(d)
+    if task in ['all', 'task_annotation_gtf', 'task_annotation']:
+        if delete_flag_only:
+            for flag in flag_avail:
+                if not args.get('dryrun') and '' in flag:
+                    print_logger('Delete {}'.format(flag))
+                    rmfile(flag)
         for d in gtf_avail:
             print_logger('Delete {}.'.format(d))
-            rmfolder(d)
-    if task in ['all', 'task_annotation_gff3']:
+            if not delete_flag_only and not args.get('dryrun'):
+                rmfolder(d)
+    if task in ['all', 'task_annotation_gff3', 'task_annotation']:
+        if delete_flag_only:
+            for flag in flag_avail:
+                if not args.get('dryrun') and '' in flag:
+                    print_logger('Delete {}'.format(flag))
+                    rmfile(flag)
         for d in gff3_avail:
             print_logger('Delete {}.'.format(d))
-            rmfolder(d)
+            if not delete_flag_only and not args.get('dryrun'):
+                rmfolder(d)
     if task in ['all', 'task_aligner_index_bowtie2']:
+        if delete_flag_only:
+            for flag in flag_avail:
+                if not args.get('dryrun') and '' in flag:
+                    print_logger('Delete {}'.format(flag))
+                    rmfile(flag)
         for d in bowtie_avail:
             print_logger('Delete {}.'.format(d))
-            rmfolder(d)
+            if not delete_flag_only and not args.get('dryrun'):
+                rmfolder(d)
     if task in ['all', 'task_aligner_index_star']:
+        if delete_flag_only:
+            for flag in flag_avail:
+                if not args.get('dryrun') and '' in flag:
+                    print_logger('Delete {}'.format(flag))
+                    rmfile(flag)
         for d in star_avail:
             print_logger('Delete {}.'.format(d))
-            rmfolder(d)
+            if not delete_flag_only and not args.get('dryrun'):
+                rmfolder(d)
