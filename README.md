@@ -26,6 +26,12 @@ pip install ./
 
 ## How to use `MrY`?
 
+There are 3 common operations:
+
+1. install
+2. list
+3. delete
+
 ### Install references
 
 ``` bash
@@ -155,4 +161,12 @@ yun delete  --root-dir /path/to/your/zoo \
 ```
 Run above command without `-n` and actually remove them. Change
 *task_annotation* to *all* to delete all references of specific zebrafish.
+
+## More Examples
+
+[here](https://github.com/Puriney/MrY/wiki/More-Example)
+
+## FAQ
+
+[here](https://github.com/Puriney/MrY/wiki/FAQ)
 
