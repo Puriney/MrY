@@ -42,13 +42,14 @@ def delete_avail(args):
         org, assembly, 'release_' + release))
 
     flag_avail = glob.iglob(jpath(
-        ROOTDIR, '_flag', '_{sp}_{org}_{asb}_{rel}_done_*').format(
+        ROOTDIR, '{sp}', '_flag', '_{sp}_{org}_{asb}_{rel}_done_*').format(
         sp=species,
         org=org,
-        abs=assembly,
+        asb=assembly,
         rel=release))
 
     for flag in flag_avail:
+        print_logger('Delete {}'.format(flag))
         rmfile(flag)
     if delete_flag_only:
         return
