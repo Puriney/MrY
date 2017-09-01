@@ -11,6 +11,7 @@ from .locate_preset import get_species_name_fpath
 
 from .install_gencode import main as do_install_gencode
 from .install_ensembl import main as do_install_ensembl
+from .install_refs import main as do_install_refs
 
 from .list_avail import list_avail
 from .delete_avail import delete_avail
@@ -44,12 +45,7 @@ def do_install(args):
             (not args.release):
         print('Specify species + assembly + org + release to install. ')
         return
-    if len(args.org) == 1 and args.org[0] == 'GENCODE':
-        print_logger('Install GENCODE...')
-        do_install_gencode(args)
-    elif len(args.org) == 1 and args.org[0] == 'Ensembl':
-        print_logger('Install Ensembl...')
-        do_install_ensembl(args)
+    do_install_refs(args)
 
 
 def do_list(args):
@@ -76,7 +72,7 @@ def get_argument_parser():
     parser = argparse.ArgumentParser(
         description=desc,
         add_help=False,
-        usage='yun [Subcommands] [Input] [Output] [Run-time] [Server]')
+        usage='yun [Subcommands] [Input] [Ref_Dir] [Run-time] [Server]')
 
     g_input = parser.add_argument_group('Input')
     g_input.add_argument(
@@ -97,11 +93,10 @@ def get_argument_parser():
         default=[], nargs='*',
         help=('Release name/number of genome assembly '
               '(e.g. 27). '))
-    g_output = parser.add_argument_group('Output')
+    g_output = parser.add_argument_group('Reference Dir')
     g_output.add_argument(
         "--root-dir", "--ref-dir",
-        default='.', type=str, nargs=1,
-        required=True,
+        default='.', type=str,
         help='Root directory to save all references.')
 
     g_runtime = parser.add_argument_group('Run-time')
@@ -153,12 +148,12 @@ def get_argument_parser():
     parser_install = subparsers.add_parser(
         'install',
         parents=[parser],
-        usage='yun install target [Input] [Output] [Run-time] [Server]',
+        usage='yun install target [Input] [Ref_Dir] [Run-time] [Server]',
         help=('Perform installation.'))
     parser_install.add_argument(
         "--target",
-        default='all', nargs=1, choices=TARGETS_SUPPORTED,
-        required=True, type=str,
+        default='all', choices=TARGETS_SUPPORTED,
+        type=str,
         help=('Target to install. '))
     parser_install.set_defaults(func=do_install)
     # List
@@ -168,7 +163,7 @@ def get_argument_parser():
         help=('List installed references.'))
     parser_list.add_argument(
         "--soft",
-        action='store_true', type=bool,
+        action='store_true',
         help=(('List available installations by tracking flags only, '
                'instead of searching actual files.')))
     parser_list.add_argument(
@@ -184,13 +179,13 @@ def get_argument_parser():
         help=('Delete references, if installed.'))
     parser_delete.add_argument(
         "--soft",
-        action='store_true', type=bool,
+        action='store_true',
         help=(('Delete flags for installed references, '
                'instead of the actual files.')))
     parser_delete.add_argument(
         "--target",
-        default='all', nargs=1, choices=TARGETS_SUPPORTED,
-        required=True, type=str,
+        default='all', choices=TARGETS_SUPPORTED,
+        type=str,
         help=('Target to delete. '))
     parser_delete.set_defaults(func=do_delete)
 
@@ -201,7 +196,7 @@ def main():
     p = get_argument_parser()
     args = p.parse_args()
 
-    if args.verbose >= 3:
+    if args.verbose >= 4:
         print(args)
 
     if 'func' not in args:
