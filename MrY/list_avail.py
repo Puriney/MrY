@@ -19,7 +19,7 @@ human GRCh38 90 Yes Yes No No Yes No No
 '''
 
 
-def tag_installed(filelist):
+def tag_installed(filelist=[]):
     tag = OrderedDict({'Genome (.fa)': False,
                        # 'Genome(.fa.gz)': True,
                        'Annotation (.gtf)': False, 'Annotation (.gff3)': False,
@@ -50,7 +50,7 @@ def list_avail(args):
     assembly = args.get('assembly')
     release = args.get('release')
 
-    ROOTDIR = args.get('root_dir', '.')
+    ROOTDIR = args.get('root_dir')
 
     savetofile = args.get('snapshot', None)
 
@@ -109,6 +109,7 @@ def list_avail(args):
                                       '*', '*', '*',
                                       'SA')))
     table = []
+
     species_avail_subinfo = defaultdict(list)
     for info_avail in [genome_fa_avail,
                        # genome_fagz_avail,
@@ -154,8 +155,10 @@ def list_avail(args):
 
         print('{}-{}-{}-{} was queried:'.format(species[0], assembly[0],
                                                 org[0], release[0]))
-        for k, v in species_avail_subinfo.get(user_query, dict()).items():
-            print('\t{:>20}: {}'.format(k,
-                                        'Installed' if v else 'Not-installed'))
+        for k, v in species_avail_subinfo.get(user_query,
+                                              tag_installed()).items():
+            print('\t{:>20}: {}'.format(
+                k,
+                'Installed' if v else 'Not-installed'))
 
     return(table)
