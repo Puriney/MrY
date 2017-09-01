@@ -1,13 +1,14 @@
-from MrY import get_workflow_fpath
+from MrY import get_workflow_fpath, print_logger
 from snakemake import snakemake
 import sys
 
 
 def main(args):
-        #     print_logger('Install GENCODE...')
     if 'GENCODE' in args.org:
+        print_logger('Install GENCODE...')
         snakefile = get_workflow_fpath(fname='gencode.snakemake')
     elif 'Ensembl' in args.org:
+        print_logger('Install Ensembl...')
         snakefile = get_workflow_fpath(fname='ensembl.snakemake')
     else:
         pass

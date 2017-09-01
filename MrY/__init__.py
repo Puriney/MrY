@@ -9,8 +9,6 @@ from .version import __version__
 from .locate_workflow import get_workflow_fpath
 from .locate_preset import get_species_name_fpath
 
-from .install_gencode import main as do_install_gencode
-from .install_ensembl import main as do_install_ensembl
 from .install_refs import main as do_install_refs
 
 from .list_avail import list_avail
@@ -152,8 +150,7 @@ def get_argument_parser():
         help=('Perform installation.'))
     parser_install.add_argument(
         "--target",
-        default='all', choices=TARGETS_SUPPORTED,
-        type=str,
+        default='all', choices=TARGETS_SUPPORTED, nargs=1,
         help=('Target to install. '))
     parser_install.set_defaults(func=do_install)
     # List
@@ -184,8 +181,7 @@ def get_argument_parser():
                'instead of the actual files.')))
     parser_delete.add_argument(
         "--target",
-        default='all', choices=TARGETS_SUPPORTED,
-        type=str,
+        default='all', choices=TARGETS_SUPPORTED, nargs=1,
         help=('Target to delete. '))
     parser_delete.set_defaults(func=do_delete)
 
