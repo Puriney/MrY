@@ -4,6 +4,7 @@ import yaml
 from snakemake import snakemake
 from .helper import base_name, dir_name, join_path
 from .helper import is_nonempty_file, print_logger, ymd
+from .helper import rmfile, rmfolder
 from .version import __version__
 from .locate_workflow import get_workflow_fpath
 from .locate_preset import get_species_name_fpath
@@ -12,6 +13,8 @@ from .install_gencode import main as do_install_gencode
 from .install_ensembl import main as do_install_ensembl
 
 from .list_avail import list_avail
+from .delete_avail import delete_avail
+
 
 MY_PKG_NAME = 'MrY'
 
@@ -21,11 +24,11 @@ with open(get_species_name_fpath(fname='species_name.yaml'), 'rt') as fin:
                                    dict()).keys()
     ORG_SUPPORTED = preset.get('supported_orgs', list())
 
-INSTALL_TARGETS = ['task_genome_fasta',
-                   'task_annotation',
-                   'task_annotation_gtf', 'task_annotation_gff3',
-                   'task_aligner_index_bowtie2', 'task_aligner_index_star',
-                   'all']
+TARGETS_SUPPORTED = ['task_genome_fasta',
+                     'task_annotation',
+                     'task_annotation_gtf', 'task_annotation_gff3',
+                     'task_aligner_index_bowtie2', 'task_aligner_index_star',
+                     'all']
 
 '''
 - subcommands: https://docs.python.org/3/library/argparse.html#sub-commands
@@ -34,6 +37,13 @@ INSTALL_TARGETS = ['task_genome_fasta',
 
 
 def do_install(args):
+    if (not args.root_dir) or \
+        (not args.species) or \
+        (not args.assembly) or \
+        (not args.org) or \
+            (not args.release):
+        print('Specify species + assembly + org + release to install. ')
+        return
     if len(args.org) == 1 and args.org[0] == 'GENCODE':
         print_logger('Install GENCODE...')
         do_install_gencode(args)
@@ -47,6 +57,18 @@ def do_list(args):
     print('=' * 10)
     print('All Available Installed Refs: ')
     print(avail_installations)
+
+
+def do_delete(args):
+    if (not args.root_dir) or \
+        (not args.species) or \
+        (not args.assembly) or \
+        (not args.org) or \
+            (not args.release):
+        print('Specify species + assembly + org + release to delete. ')
+        return
+
+    delete_avail(args)
 
 
 def get_argument_parser():
@@ -77,8 +99,9 @@ def get_argument_parser():
               '(e.g. 27). '))
     g_output = parser.add_argument_group('Output')
     g_output.add_argument(
-        "--root-dir",
-        default='.',
+        "--root-dir", "--ref-dir",
+        default='.', type=str, nargs=1,
+        required=True,
         help='Root directory to save all references.')
 
     g_runtime = parser.add_argument_group('Run-time')
@@ -134,8 +157,8 @@ def get_argument_parser():
         help=('Perform installation.'))
     parser_install.add_argument(
         "--target",
-        default='all', nargs=1, choices=INSTALL_TARGETS,
-        required=True,
+        default='all', nargs=1, choices=TARGETS_SUPPORTED,
+        required=True, type=str,
         help=('Target to install. '))
     parser_install.set_defaults(func=do_install)
     # List
@@ -145,7 +168,7 @@ def get_argument_parser():
         help=('List installed references.'))
     parser_list.add_argument(
         "--soft",
-        action='store_true',
+        action='store_true', type=bool,
         help=(('List available installations by tracking flags only, '
                'instead of searching actual files.')))
     parser_list.add_argument(
@@ -154,6 +177,22 @@ def get_argument_parser():
         metavar='FILENAME', default='refs_all_available_' + ymd() + '.txt',
         help=(('Save items list to file.')))
     parser_list.set_defaults(func=do_list)
+    # Delete
+    parser_delete = subparsers.add_parser(
+        'delete',
+        parents=[parser],
+        help=('Delete references, if installed.'))
+    parser_delete.add_argument(
+        "--soft",
+        action='store_true', type=bool,
+        help=(('Delete flags for installed references, '
+               'instead of the actual files.')))
+    parser_delete.add_argument(
+        "--target",
+        default='all', nargs=1, choices=TARGETS_SUPPORTED,
+        required=True, type=str,
+        help=('Target to delete. '))
+    parser_delete.set_defaults(func=do_delete)
 
     return(parser)
 
