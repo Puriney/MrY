@@ -45,10 +45,10 @@ def tag_installed(filelist):
 def list_avail(args):
 
     args = vars(args)
-    species = args.get('species', [])
-    org = args.get('org', [])
-    assembly = args.get('assembly', [])
-    release = args.get('release', [])
+    species = args.get('species')
+    org = args.get('org')
+    assembly = args.get('assembly')
+    release = args.get('release')
 
     ROOTDIR = args.get('root_dir', '.')
 
