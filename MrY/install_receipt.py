@@ -5,9 +5,8 @@ from MrY import print_logger as printl
 
 def new_installation_receipt(fpath, num=1):
     '''
-    [{'LINK_FASTA': '',
-    'LINK_GFF3': '',
-    'LINK_GTF': '',
+    [{'LINK_GENOME': '',
+    'LINK_ANNOTATION': '',
     'assembly': '',
     'org': '',
     'release': '',
@@ -19,9 +18,8 @@ def new_installation_receipt(fpath, num=1):
         fout.write('  assembly: \'{}\'\n'.format(''))
         fout.write('  release: \'{}\'\n'.format(''))
         fout.write('  org: \'{}\'\n'.format(''))
-        fout.write('  LINK_FASTA: \'{}\'\n'.format(''))
-        fout.write('  LINK_GFF3: \'{}\'\n'.format(''))
-        fout.write('  LINK_GTF: \'{}\'\n'.format(''))
+        fout.write('  LINK_GENOME: \'{}\'\n'.format(''))
+        fout.write('  LINK_ANNOTATION: \'{}\'\n'.format(''))
     fout.close()
 
 
@@ -40,8 +38,7 @@ def load_installation_receipt(fpath):
         res['assembly'].append(receipt['assembly'])
         res['release'].append(receipt['release'])
         res['org'].append(receipt['org'])
-        res['LINK_FASTA'].append(receipt['LINK_FASTA'])
-        res['LINK_GFF3'].append(receipt['LINK_GFF3'])
-        res['LINK_GTF'].append(receipt['LINK_GTF'])
+        res['LINK_GENOME'].append(receipt['LINK_GENOME'])
+        res['LINK_ANNOTATION'].append(receipt['LINK_ANNOTATION'])
     printl('{}/{} genomes are to be installed.'.format(j, i))
     return res
