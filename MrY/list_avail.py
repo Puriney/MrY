@@ -50,7 +50,7 @@ def list_avail(args):
     assembly = args.get('assembly')
     release = args.get('release')
 
-    ROOTDIR = args.get('root_dir')
+    ROOTDIR = args.get('root_dir', './').rstrip(os.sep)
 
     savetofile = args.get('snapshot', None)
 

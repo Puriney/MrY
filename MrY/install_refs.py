@@ -1,17 +1,32 @@
-from MrY import get_workflow_fpath, print_logger
-from snakemake import snakemake
 import sys
+from MrY import get_workflow_fpath, print_logger
+from MrY import load_installation_receipt
+from snakemake import snakemake
 
 
 def main(args):
-    if 'GENCODE' in args.org:
-        print_logger('Install GENCODE...')
-        snakefile = get_workflow_fpath(fname='gencode.snakemake')
-    elif 'Ensembl' in args.org:
-        print_logger('Install Ensembl...')
-        snakefile = get_workflow_fpath(fname='ensembl.snakemake')
+    if args.receipt:
+        print_logger('yun install NCBI... ')
+        receipt = load_installation_receipt(fpath=args.receipt)
+        args.species = receipt.get('species', [])
+        args.assembly = receipt.get('assembly', [])
+        args.org = receipt.get('org', [])
+        args.release = receipt.get('release', [])
+        args.LINK_GENOME = receipt.get('LINK_GENOME', [])
+        args.LINK_ANNOTATION = receipt.get('LINK_ANNOTATION', [])
+        snakefile = get_workflow_fpath(fname='ncbi.snakemake')
     else:
-        pass
+        if 'GENCODE' in args.org:
+            print_logger('yun install GENCODE...')
+            snakefile = get_workflow_fpath(fname='gencode.snakemake')
+        elif 'Ensembl' in args.org:
+            print_logger('yun install Ensembl...')
+            snakefile = get_workflow_fpath(fname='ensembl.snakemake')
+        else:
+            pass
+
+    if args.verbose >= 5:
+        print(args)
 
     success = snakemake(
         snakefile=snakefile,
@@ -22,7 +37,9 @@ def main(args):
                 'species': args.species,
                 'assembly': args.assembly,
                 'org': args.org,
-                'release': args.release},
+                'release': args.release,
+                'LINK_GENOME': args.LINK_GENOME,
+                'LINK_ANNOTATION': args.LINK_ANNOTATION},
 
         printshellcmds=True,
         printreason=True,
