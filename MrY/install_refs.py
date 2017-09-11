@@ -1,6 +1,7 @@
-from MrY import get_workflow_fpath, print_logger
-from snakemake import snakemake
 import sys
+from MrY import get_workflow_fpath, print_logger
+from MrY import load_installation_receipt
+from snakemake import snakemake
 
 
 def main(args):
@@ -12,9 +13,17 @@ def main(args):
         snakefile = get_workflow_fpath(fname='ensembl.snakemake')
     elif 'NCBI' in args.org:
         print_logger('yun install NCBI... ')
+        receipt = load_installation_receipt(fpath=args.receipt)
+        args.species = [receipt.get('SPECIES', None)]
+        args.assembly = [receipt.get('ASSEMBLY', None)]
+        args.org = [receipt.get('ORG', None)]
+        args.release = [receipt.get('RELEASE', None)]
         snakefile = get_workflow_fpath(fname='ncbi.snakemake')
     else:
         pass
+
+    if args.verbose >= 5:
+        print(args)
 
     success = snakemake(
         snakefile=snakefile,

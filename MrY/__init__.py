@@ -10,6 +10,7 @@ from .locate_workflow import get_workflow_fpath
 from .locate_preset import get_species_name_fpath
 
 from .install_receipt import new_installation_receipt
+from .install_receipt import load_installation_receipt
 from .install_refs import main as do_install_refs
 
 from .list_avail import list_avail
