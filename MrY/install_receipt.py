@@ -12,7 +12,7 @@ def new_installation_receipt(fpath, num=1):
     'org': '',
     'release': '',
     'species': ''}]
-  '''
+    '''
     fout = open(fpath, 'w')
     for i in range(num):
         fout.write('- species: \'{}\'\n'.format(''))
