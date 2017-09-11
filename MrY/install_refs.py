@@ -5,11 +5,14 @@ import sys
 
 def main(args):
     if 'GENCODE' in args.org:
-        print_logger('Install GENCODE...')
+        print_logger('yun install GENCODE...')
         snakefile = get_workflow_fpath(fname='gencode.snakemake')
     elif 'Ensembl' in args.org:
-        print_logger('Install Ensembl...')
+        print_logger('yun install Ensembl...')
         snakefile = get_workflow_fpath(fname='ensembl.snakemake')
+    elif 'NCBI' in args.org:
+        print_logger('yun install NCBI... ')
+        snakefile = get_workflow_fpath(fname='ncbi.snakemake')
     else:
         pass
 
