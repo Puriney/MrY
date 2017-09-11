@@ -9,6 +9,7 @@ from .version import __version__
 from .locate_workflow import get_workflow_fpath
 from .locate_preset import get_species_name_fpath
 
+from .install_receipt import new_installation_receipt
 from .install_refs import main as do_install_refs
 
 from .list_avail import list_avail
@@ -142,6 +143,16 @@ def get_argument_parser():
         default=0)
 
     subparsers = parser.add_subparsers(title='Subcommands')
+    # Install Receipt
+    parser_receipt = subparsers.add_parser(
+        'new-receipt',
+        parent=[parser],
+        usage='yun new-receipt -o FILE',
+        help='New receipt for installation of references')
+    parser_receipt.add_argument(
+        '-o', '--saveto',
+        default='install_receipt_ncbi.yaml', type=str, metavar='FILENAME',
+        help='Save receipt of installation to file.' )
     # Install
     parser_install = subparsers.add_parser(
         'install',
