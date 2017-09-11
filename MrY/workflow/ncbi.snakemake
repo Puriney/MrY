@@ -21,11 +21,7 @@ ROOTDIR = config.get('root_dir')
 ORG = config.get('org')
 
 REMOTE_GENOME_FPATH_CODE = config.get('LINK_FASTA')
-REMOTE_GTF_FPATH_CODE = config.get('LINK_GTF')
-REMOTE_GFF_FPATH_CODE = config.get('LINK_GFF')
-LOCAL_GENOME_FPATH_CODE = 'dna.fasta.gz'
-LOCAL_GTF_FPATH_CODE = 'annotation.gtf.gz'
-LOCAL_GFF_FPATH_CODE = 'annotation.gff3.gz'
+REMOTE_ANNO_FPATH_CODE = config.get('LINK_ANNOTATION')
 
 '''
 Snakemake workflow
