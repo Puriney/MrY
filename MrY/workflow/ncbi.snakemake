@@ -40,24 +40,18 @@ rule all:
                fagz=REMOTE_GENOME_FPATH_CODE),
         expand(jpath(ROOTDIR, '{species}', 'annotation', '{org}',
                      '{assembly}', 'release_{release_id}',
-                     base_name('{gtfgz}')),
+                     base_name('{annogz}')),
                zip, species=SPECIES, org=ORG,
                assembly=ASSEMBLY, release_id=RELEASE,
-               gtfgz=REMOTE_GTF_FPATH_CODE),
-        expand(jpath(ROOTDIR, '{species}', 'genome', '{org}',
-                     '{assembly}', 'release_{release_id}',
-                     base_name('{gffgz}')),
-               zip, species=SPECIES, org=ORG,
-               assembly=ASSEMBLY, release_id=RELEASE,
-               gffgz=REMOTE_GFF_FPATH_CODE),
+               annogz=REMOTE_ANNO_FPATH_CODE),
 
-        expand(jpath(ROOTDIR, '{species}', '_flag',
-                     flag_fname_code.format(
-                         sp='{species}', org='{org}',
-                         asb='{assembly}', rel='{release_id}',
-                         task='gunzipped-genomeFasta')),
-               zip, species=SPECIES, org=ORG,
-               assembly=ASSEMBLY, release_id=RELEASE),
+        # expand(jpath(ROOTDIR, '{species}', '_flag',
+        #              flag_fname_code.format(
+        #                  sp='{species}', org='{org}',
+        #                  asb='{assembly}', rel='{release_id}',
+        #                  task='gunzipped-genomeFasta')),
+        #        zip, species=SPECIES, org=ORG,
+        #        assembly=ASSEMBLY, release_id=RELEASE),
         expand(jpath(ROOTDIR, '{species}', '_flag',
                      flag_fname_code.format(
                          sp='{species}', org='{org}',
@@ -132,11 +126,10 @@ rule setup_folder:
             shell('touch {f}')
 
 
-
 '''
-Download GTF and GFF3 of annotation
+Download GTF or GFF3 of annotation
 '''
-rule download_annotation_gtf:
+rule download_annotation:
     input:
         flag = jpath(ROOTDIR, '{species}', '_flag',
                      flag_fname_code.format(sp='{species}', org='{org}',
@@ -144,138 +137,59 @@ rule download_annotation_gtf:
                                             rel='{release_id}',
                                             task='setupdir')),
     output:
-        gtf = jpath(ROOTDIR, '{species}', 'annotation', '{org}',
-                    '{assembly}', 'release_{release_id}',
-                    LOCAL_GTF_FNAME_CODE.format(asb='{assembly}',
-                                                rel='{release_id}')),
+        anno = jpath(ROOTDIR, '{species}', 'annotation', '{org}',
+                     '{assembly}', 'release_{release_id}',
+                     base_name('{annogz}')),
         flag = jpath(ROOTDIR, '{species}', '_flag',
                      flag_fname_code.format(sp='{species}', org=ORG,
                                             asb='{assembly}',
                                             rel='{release_id}',
-                                            task='download-gtf')),
+                                            task='download-annotation')),
     run:
-        stream_sp_sci = dict_name_common2sci.get(wildcards.species, None)
-        remote_gtf = REMOTE_GTF_FPATH_CODE.format(
-            sp=stream_sp_sci,
-            asb=wildcards.assembly,
-            rel=wildcards.release_id,
-            Csp=stream_sp_sci.capitalize())
-        local_gtf = jpath(dir_name(output.gtf),
-                          base_name(output.gtf, ext='gz'))
+        remote_anno = wildcards.annogz
         shell(
             """
-            wget {remote_gtf} -O {output.gtf} -nv && \
+            wget {remote_anno} -O {output.anno} -nv && \
             touch {output.flag}
             """)
-        print_logger('Download GTF: {} to {}'.format(remote_gtf, output.gtf))
-
-
-rule task_annotation_gtf:
-    input:
-        expand(jpath(ROOTDIR, '{species}', 'annotation', ORG,
-                     '{assembly}', 'release_{release_id}',
-                     LOCAL_GTF_FNAME_CODE.format(
-                         asb='{assembly}', rel='{release_id}')),
-               zip, species=SPECIES, assembly=ASSEMBLY, release_id=RELEASE),
-
-
-rule download_annotation_gff3:
-    input:
-        flag = jpath(ROOTDIR, '{species}', '_flag',
-                     flag_fname_code.format(sp='{species}', org=ORG,
-                                            asb='{assembly}',
-                                            rel='{release_id}',
-                                            task='setupdir')),
-    output:
-        gff3 = jpath(ROOTDIR, '{species}', 'annotation', ORG,
-                     '{assembly}', 'release_{release_id}',
-                     LOCAL_GFF_FNAME_CODE.format(asb='{assembly}',
-                                                 rel='{release_id}')),
-        flag = jpath(ROOTDIR, '{species}', '_flag',
-                     flag_fname_code.format(sp='{species}', org=ORG,
-                                            asb='{assembly}',
-                                            rel='{release_id}',
-                                            task='download-gff3')),
-    run:
-        stream_sp_sci = dict_name_common2sci.get(wildcards.species, None)
-        remote_gff3 = REMOTE_GFF_FPATH_CODE.format(
-            sp=stream_sp_sci,
-            asb=wildcards.assembly,
-            rel=wildcards.release_id,
-            Csp=stream_sp_sci.capitalize())
-        local_gff3 = jpath(dir_name(output.gff3),
-                           base_name(output.gff3, ext='gz'))
-        shell(
-            """
-            wget {remote_gff3} -O {output.gff3} -nv && \
-            touch {output.flag}
-            """)
-        print_logger('Download GFF3: {} to {}'.format(remote_gff3,
-                                                      output.gff3))
-
-
-rule task_annotation_gff3:
-    input:
-        expand(jpath(ROOTDIR, '{species}', 'annotation', ORG,
-                     '{assembly}', 'release_{release_id}',
-                     LOCAL_GFF_FNAME_CODE.format(
-                         asb='{assembly}', rel='{release_id}')),
-               zip, species=SPECIES, assembly=ASSEMBLY, release_id=RELEASE),
+        print_logger('Download annotation: {} to {}'.format(
+            remote_anno, output.gtf))
 
 
 rule zcat_anno_gz:
     input:
-        gtf = rules.download_annotation_gtf.output.gtf,
-        gff3 = rules.download_annotation_gff3.output.gff3,
-    output:
-        gtf = jpath(ROOTDIR, '{species}', 'annotation', ORG,
-                    '{assembly}', 'release_{release_id}',
-                    base_name(LOCAL_GTF_FNAME_CODE.format(
-                        asb='{assembly}', rel='{release_id}'), ext='gz')),
-        gff3 = jpath(ROOTDIR, '{species}', 'annotation', ORG,
+        anno = jpath(ROOTDIR, '{species}', 'annotation', '{org}',
                      '{assembly}', 'release_{release_id}',
-                     base_name(LOCAL_GFF_FNAME_CODE.format(
-                         asb='{assembly}',
-                         rel='{release_id}'), ext='gz')),
+                     base_name('{annogz}')),
+    output:
+        anno = jpath(ROOTDIR, '{species}', 'annotation', '{org}',
+                    '{assembly}', 'release_{release_id}',
+                    base_name('{annogz}', ext='gz')),
         flag = jpath(ROOTDIR, '{species}', '_flag',
-                     flag_fname_code.format(sp='{species}', org=ORG,
+                     flag_fname_code.format(sp='{species}', org='{org}',
                                             asb='{assembly}',
                                             rel='{release_id}',
                                             task='gunzipped-annotation')),
     run:
-        print(output.gtf)
         shell('''
-            zcat -f {input.gtf} > {output.gtf} && \
-            zcat -f {input.gff3} > {output.gff3} && \
+            zcat -f {input.annot} > {output.annot} && \
             touch {output.flag}''')
 
 
 rule task_annotation:
     input:
-        gtfgz = expand(jpath(ROOTDIR, '{species}', 'annotation', ORG,
+        gtfgz = expand(jpath(ROOTDIR, '{species}', 'annotation', '{org}',
                              '{assembly}', 'release_{release_id}',
-                             LOCAL_GTF_FNAME_CODE.format(
-                                 asb='{assembly}', rel='{release_id}')),
+                             base_name('{annogz}')),
                        zip,
-                       species=SPECIES, assembly=ASSEMBLY, release_id=RELEASE),
-        gtf = expand(jpath(ROOTDIR, '{species}', 'annotation', ORG,
-                           '{assembly}', 'release_{release_id}',
-                           base_name(LOCAL_GTF_FNAME_CODE.format(
-                               asb='{assembly}', rel='{release_id}'),
-                               ext='gz')),
-                     zip,
-                     species=SPECIES, assembly=ASSEMBLY, release_id=RELEASE),
-        gff3gz = expand(jpath(ROOTDIR, '{species}', 'annotation', ORG,
-                              '{assembly}', 'release_{release_id}',
-                              LOCAL_GFF_FNAME_CODE.format(
-                                  asb='{assembly}', rel='{release_id}')),
-                        zip,
-                        species=SPECIES, assembly=ASSEMBLY, release_id=RELEASE),
-        gff3 = expand(jpath(ROOTDIR, '{species}', 'annotation', ORG,
-                            '{assembly}', 'release_{release_id}',
-                            base_name(LOCAL_GFF_FNAME_CODE.format(
-                                asb='{assembly}', rel='{release_id}'),
-                                ext='gz')),
-                      zip,
-                      species=SPECIES, assembly=ASSEMBLY, release_id=RELEASE),
+                       species=SPECIES, org=ORG,
+                       assembly=ASSEMBLY, release_id=RELEASE,
+                       annogz=REMOTE_ANNO_FPATH_CODE),
+        gtfgz = expand(jpath(ROOTDIR, '{species}', 'annotation', '{org}',
+                             '{assembly}', 'release_{release_id}',
+                             base_name('{annogz}', ext='gz')),
+                       zip,
+                       species=SPECIES, org=ORG,
+                       assembly=ASSEMBLY, release_id=RELEASE,
+                       annogz=REMOTE_ANNO_FPATH_CODE),
 

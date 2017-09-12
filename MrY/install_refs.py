@@ -14,10 +14,10 @@ def main(args):
     elif 'NCBI' in args.org:
         print_logger('yun install NCBI... ')
         receipt = load_installation_receipt(fpath=args.receipt)
-        args.species = [receipt.get('species', None)]
-        args.assembly = [receipt.get('assembly', None)]
-        args.org = [receipt.get('org', None)]
-        args.release = [receipt.get('release', None)]
+        args.species = receipt.get('species', [])
+        args.assembly = receipt.get('assembly', [])
+        args.org = receipt.get('org', [])
+        args.release = receipt.get('release', [])
         snakefile = get_workflow_fpath(fname='ncbi.snakemake')
     else:
         pass
