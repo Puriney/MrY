@@ -334,7 +334,7 @@ rule download_genome_fasta:
         shell('''
             wget {remote_fa_avail} -O {local_fa_fpath} -nv && \
             ln -s {local_fa_fpath} {output.fa} && \
-            touch -h {local_fa_fpath} && \
+            touch -h {output.fa} && \
             touch {output.flag}
             ''')
 
