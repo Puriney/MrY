@@ -5,13 +5,7 @@ from snakemake import snakemake
 
 
 def main(args):
-    if 'GENCODE' in args.org:
-        print_logger('yun install GENCODE...')
-        snakefile = get_workflow_fpath(fname='gencode.snakemake')
-    elif 'Ensembl' in args.org:
-        print_logger('yun install Ensembl...')
-        snakefile = get_workflow_fpath(fname='ensembl.snakemake')
-    elif 'NCBI' in args.org:
+    if args.receipt:
         print_logger('yun install NCBI... ')
         receipt = load_installation_receipt(fpath=args.receipt)
         args.species = receipt.get('species', [])
@@ -22,7 +16,14 @@ def main(args):
         args.LINK_ANNOTATION = receipt.get('LINK_ANNOTATION', [])
         snakefile = get_workflow_fpath(fname='ncbi.snakemake')
     else:
-        pass
+        if 'GENCODE' in args.org:
+            print_logger('yun install GENCODE...')
+            snakefile = get_workflow_fpath(fname='gencode.snakemake')
+        elif 'Ensembl' in args.org:
+            print_logger('yun install Ensembl...')
+            snakefile = get_workflow_fpath(fname='ensembl.snakemake')
+        else:
+            pass
 
     if args.verbose >= 5:
         print(args)

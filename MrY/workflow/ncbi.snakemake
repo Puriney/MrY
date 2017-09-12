@@ -23,6 +23,8 @@ ORG = config.get('org')
 REMOTE_GENOME_FPATH_CODE = config.get('LINK_FASTA')
 REMOTE_ANNO_FPATH_CODE = config.get('LINK_ANNOTATION')
 
+flag_fname_code = '_{sp}_{org}_{asb}_{rel}_done_{task}'
+
 '''
 Snakemake workflow
 '''
@@ -129,55 +131,62 @@ rule setup_folder:
 '''
 Download GTF or GFF3 of annotation
 '''
-rule download_annotation:
-    input:
-        flag = jpath(ROOTDIR, '{species}', '_flag',
-                     flag_fname_code.format(sp='{species}', org='{org}',
-                                            asb='{assembly}',
-                                            rel='{release_id}',
-                                            task='setupdir')),
-    output:
-        anno = jpath(ROOTDIR, '{species}', 'annotation', '{org}',
-                     '{assembly}', 'release_{release_id}',
-                     base_name('{annogz}')),
-        flag = jpath(ROOTDIR, '{species}', '_flag',
-                     flag_fname_code.format(sp='{species}', org=ORG,
-                                            asb='{assembly}',
-                                            rel='{release_id}',
-                                            task='download-annotation')),
-    run:
-        remote_anno = wildcards.annogz
-        shell(
-            """
-            wget {remote_anno} -O {output.anno} -nv && \
-            touch {output.flag}
-            """)
-        print_logger('Download annotation: {} to {}'.format(
-            remote_anno, output.gtf))
+# rule download_annotation:
+#     # input:
+#     #     flag = jpath(ROOTDIR, '{species}', '_flag',
+#     #                  flag_fname_code.format(sp='{species}', org='{org}',
+#     #                                         asb='{assembly}',
+#     #                                         rel='{release_id}',
+#     #                                         task='setupdir')),
+#     output:
+#         anno = jpath(ROOTDIR, '{species}', 'annotation', '{org}',
+#                      '{assembly}', 'release_{release_id}',
+#                      base_name('{annogz}')),
+#         flag = jpath(ROOTDIR, '{species}', '_flag',
+#                      flag_fname_code.format(
+#                          sp='{species}', org='{org}',
+#                          asb='{assembly}',
+#                          rel='{release_id}',
+#                          task='download-') + base_name('{annogz}')),
+#     run:
+#         remote_anno = wildcards.annogz
+#         print(remote_anno)
+#         print(output.anno)
+#         shell(
+#             """
+#             wget {remote_anno} -O {output.anno} -nv && \
+#             touch {output.flag}
+#             """)
+#         print_logger('Download annotation: {} to {}'.format(
+#             remote_anno, output.gtf))
 
 
-rule zcat_anno_gz:
-    input:
-        anno = jpath(ROOTDIR, '{species}', 'annotation', '{org}',
-                     '{assembly}', 'release_{release_id}',
-                     base_name('{annogz}')),
-    output:
-        anno = jpath(ROOTDIR, '{species}', 'annotation', '{org}',
-                    '{assembly}', 'release_{release_id}',
-                    base_name('{annogz}', ext='gz')),
-        flag = jpath(ROOTDIR, '{species}', '_flag',
-                     flag_fname_code.format(sp='{species}', org='{org}',
-                                            asb='{assembly}',
-                                            rel='{release_id}',
-                                            task='gunzipped-annotation')),
-    run:
-        shell('''
-            zcat -f {input.annot} > {output.annot} && \
-            touch {output.flag}''')
+# rule zcat_anno_gz:
+#     input:
+#         anno = jpath(ROOTDIR, '{species}', 'annotation', '{org}',
+#                      '{assembly}', 'release_{release_id}',
+#                      base_name('{annogz}')),
+#         # anno = rules.download_annotation.output.anno,
+#     output:
+#         anno = jpath(ROOTDIR, '{species}', 'annotation', '{org}',
+#                      '{assembly}', 'release_{release_id}',
+#                      base_name('{annogz}', ext='gz')),
+#         flag = jpath(ROOTDIR, '{species}', '_flag',
+#                      flag_fname_code.format(
+#                          sp='{species}', org='{org}',
+#                          asb='{assembly}',
+#                          rel='{release_id}',
+#                          task='gunzipped-') + base_name('{annogz}', ext='gz')),
+#     run:
+#         shell('''
+#             zcat -f {input.anno} > {output.anno} && \
+#             touch {output.flag}''')
 
 
 rule task_annotation:
     input:
+        rules.setup_folder.output.flags
+    output:
         gtfgz = expand(jpath(ROOTDIR, '{species}', 'annotation', '{org}',
                              '{assembly}', 'release_{release_id}',
                              base_name('{annogz}')),
@@ -185,11 +194,19 @@ rule task_annotation:
                        species=SPECIES, org=ORG,
                        assembly=ASSEMBLY, release_id=RELEASE,
                        annogz=REMOTE_ANNO_FPATH_CODE),
-        gtfgz = expand(jpath(ROOTDIR, '{species}', 'annotation', '{org}',
-                             '{assembly}', 'release_{release_id}',
-                             base_name('{annogz}', ext='gz')),
-                       zip,
-                       species=SPECIES, org=ORG,
-                       assembly=ASSEMBLY, release_id=RELEASE,
-                       annogz=REMOTE_ANNO_FPATH_CODE),
-
+        gtf = expand(jpath(ROOTDIR, '{species}', 'annotation', '{org}',
+                           '{assembly}', 'release_{release_id}',
+                           base_name('{annogz}', ext='gz')),
+                     zip,
+                     species=SPECIES, org=ORG,
+                     assembly=ASSEMBLY, release_id=RELEASE,
+                     annogz=REMOTE_ANNO_FPATH_CODE),
+    run:
+        for remote_anno, local_anno_gz, local_anno in zip(
+                REMOTE_ANNO_FPATH_CODE,
+                output.gtfgz,
+                output.gtf):
+            shell('''
+                wget {remote_anno} -O {local_anno_gz} -nv && \
+                zcat -f {local_anno} > {local_anno} && \
+            ''')

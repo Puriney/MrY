@@ -29,24 +29,34 @@ TARGETS_SUPPORTED = ['task_genome_fasta',
                      'task_annotation',
                      'task_annotation_gtf', 'task_annotation_gff3',
                      'task_aligner_index_bowtie2', 'task_aligner_index_star',
-                     'all']
+                     'all',
+                     'setup_folder']
 
 '''
 - subcommands: https://docs.python.org/3/library/argparse.html#sub-commands
 - Group input/output: https://docs.python.org/3/library/argparse.html#argument-groups
 '''
 
+
 def do_new_receipt(args):
-    new_installation_receipt(args.saveto)
+    new_installation_receipt(args.saveto, args.num_species)
 
 
 def do_install(args):
-    if (not args.root_dir) or \
-        (not args.species) or \
+    if (not args.root_dir):
+        print('Specify --root-dir to install references.')
+        return
+    hasinput = 2
+    if (not args.receipt):
+        hasinput -= 1
+    if (not args.species) or \
         (not args.assembly) or \
         (not args.org) or \
             (not args.release):
-        print('Specify species + assembly + org + release to install. ')
+        hasinput -= 1
+    if hasinput == 0:
+        print('Specify receipt or '
+              '(species + assembly + org + release) to install.')
         return
     do_install_refs(args)
 
@@ -162,6 +172,10 @@ def get_argument_parser():
         '-o', '--saveto',
         default='install_receipt_ncbi.yaml', type=str, metavar='FILENAME',
         help='Save receipt of installation to file.')
+    parser_receipt.add_argument(
+        '--num-species',
+        default=1, type=int, metavar='N',
+        help='Number of species to be installed.')
     parser_receipt.set_defaults(func=do_new_receipt)
     # Install
     parser_install = subparsers.add_parser(
