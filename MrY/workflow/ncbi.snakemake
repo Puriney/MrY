@@ -35,38 +35,31 @@ All expected results
 '''
 rule all:
     input:
+        expand(jpath(ROOTDIR, '{species}', 'genome', '{org}',
+                     '{assembly}', 'release_' + '{release_id}',
+                     'genome.fa'),
+               zip,
+               species=SPECIES, org=ORG,
+               assembly=ASSEMBLY, release_id=RELEASE),
         expand(jpath(ROOTDIR, '{species}', 'annotation', '{org}',
-                     '{assembly}', 'release_{release_id}',
-                     base_name('{fagz}')),
-               zip, species=SPECIES, org=ORG,
-               assembly=ASSEMBLY, release_id=RELEASE,
-               fagz=REMOTE_GENOME_FPATH_CODE),
-        expand(jpath(ROOTDIR, '{species}', 'annotation', '{org}',
-                     '{assembly}', 'release_{release_id}',
-                     base_name('{annogz}')),
-               zip, species=SPECIES, org=ORG,
-               assembly=ASSEMBLY, release_id=RELEASE,
-               annogz=REMOTE_ANNO_FPATH_CODE),
+                     '{assembly}', 'release_' + '{release_id}',
+                     'anno_link'),
+               zip,
+               species=SPECIES, org=ORG,
+               assembly=ASSEMBLY, release_id=RELEASE),
 
-        # expand(jpath(ROOTDIR, '{species}', '_flag',
-        #              flag_fname_code.format(
-        #                  sp='{species}', org='{org}',
-        #                  asb='{assembly}', rel='{release_id}',
-        #                  task='gunzipped-genomeFasta')),
-        #        zip, species=SPECIES, org=ORG,
-        #        assembly=ASSEMBLY, release_id=RELEASE),
         expand(jpath(ROOTDIR, '{species}', '_flag',
-                     flag_fname_code.format(
-                         sp='{species}', org='{org}',
-                         asb='{assembly}', rel='{release_id}',
-                         task='alignerIndex-Bowtie2')),
+                     flag_fname_code.format(sp='{species}', org='{org}',
+                                            asb='{assembly}',
+                                            rel='{release_id}',
+                                            task='alignerIndex-Bowtie2')),
                zip, species=SPECIES, org=ORG,
                assembly=ASSEMBLY, release_id=RELEASE),
         expand(jpath(ROOTDIR, '{species}', '_flag',
-                     flag_fname_code.format(
-                         sp='{species}', org='{org}',
-                         asb='{assembly}', rel='{release_id}',
-                         task='alignerIndex-STAR')),
+                     flag_fname_code.format(sp='{species}', org='{org}',
+                                            asb='{assembly}',
+                                            rel='{release_id}',
+                                            task='alignerIndex-STAR')),
                zip, species=SPECIES, org=ORG,
                assembly=ASSEMBLY, release_id=RELEASE),
 '''
@@ -124,7 +117,8 @@ rule setup_folder:
     run:
         for d in [output.dir_genome, output.dir_annotation, output.dir_bowtie,
                   output.dir_star, output.dir_flag]:
-            shell('mkdir -p {d}')
+            if not os.path.isdir(d):
+                shell('mkdir -p {d}')
         for f in output.flags:
             shell('touch {f}')
 
@@ -135,18 +129,17 @@ Download GTF or GFF3 of annotation
 rule task_annotation:
     input:
         # anno = [FTP.remote(x) for x in REMOTE_ANNO_FPATH_CODE],
-        flags = expand(jpath(ROOTDIR, '{species}', '_flag',
-                             flag_fname_code.format(
-                                 sp='{species}',
-                                 org='{org}',
-                                 asb='{assembly}',
-                                 rel='{release_id}',
-                                 task='setupdir')),
-                       zip,
-                       species=SPECIES,
-                       org=ORG,
-                       assembly=ASSEMBLY,
-                       release_id=RELEASE),
+        # flags = expand(jpath(ROOTDIR, '{species}', '_flag',
+        #                      flag_fname_code.format(
+        #                          sp='{species}',
+        #                          org='{org}',
+        #                          asb='{assembly}',
+        #                          rel='{release_id}',
+        #                          task='setupdir')),
+        #                zip,
+        #                species=SPECIES, org=ORG,
+        #                assembly=ASSEMBLY, release_id=RELEASE),
+        rules.setup_folder.output.dir_annotation,
     output:
         flags = expand(jpath(ROOTDIR, '{species}', '_flag',
                              flag_fname_code.format(
@@ -156,10 +149,14 @@ rule task_annotation:
                                  rel='{release_id}',
                                  task='gunzipped-annotation')),
                        zip,
-                       species=SPECIES,
-                       org=ORG,
-                       assembly=ASSEMBLY,
-                       release_id=RELEASE),
+                       species=SPECIES, org=ORG,
+                       assembly=ASSEMBLY, release_id=RELEASE),
+        anno = expand(jpath(ROOTDIR, '{species}', 'annotation', '{org}',
+                            '{assembly}', 'release_' + '{release_id}',
+                            'anno_link'),
+                      zip,
+                      species=SPECIES, org=ORG,
+                      assembly=ASSEMBLY, release_id=RELEASE),
     run:
         for remote_anno_gz, species, org, assembly, release_id in zip(
                 REMOTE_ANNO_FPATH_CODE, SPECIES, ORG, ASSEMBLY, RELEASE):
@@ -186,6 +183,8 @@ rule task_annotation:
             shell('''
             wget {remote_anno_gz} -O {local_anno_gz} -nv && \
             zcat {local_anno_gz} > {local_anno} && \
+            ln -s {local_anno} {output.anno} && \
+            touch -h {output.anno} && \
             touch {flag1} {flag2}
             ''')
 
@@ -194,14 +193,15 @@ Download FASTA of genome
 '''
 rule task_genome_fasta:
     input:
-        flags = expand(jpath(ROOTDIR, '{species}', '_flag',
-                             flag_fname_code.format(
-                                 sp='{species}', org='{org}',
-                                 asb='{assembly}', rel='{release_id}',
-                                 task='setupdir')),
-                       zip,
-                       species=SPECIES, org=ORG,
-                       assembly=ASSEMBLY, release_id=RELEASE),
+        # flags = expand(jpath(ROOTDIR, '{species}', '_flag',
+        #                      flag_fname_code.format(
+        #                          sp='{species}', org='{org}',
+        #                          asb='{assembly}', rel='{release_id}',
+        #                          task='setupdir')),
+        #                zip,
+        #                species=SPECIES, org=ORG,
+        #                assembly=ASSEMBLY, release_id=RELEASE),
+        rules.setup_folder.output.dir_genome,
     output:
         flags = expand(jpath(ROOTDIR, '{species}', '_flag',
                              flag_fname_code.format(
@@ -245,3 +245,94 @@ rule task_genome_fasta:
             zcat {local_fa_gz} > {local_fa} && \
             touch {flag1} {flag2}
             ''')
+
+
+'''
+Build index of aligner - Bowtie2
+Bowtie2-build creates 1.bt2, 2.bt2, 3.bt2, 4.bt2, 1.rev.bt2, 2.rev.bt2
+'''
+rule cook_aligner_index_bowtie2:
+    input:
+        fa = jpath(ROOTDIR, '{species}', 'genome', '{org}',
+                   '{assembly}', 'release_' + '{release_id}',
+                   'genome.fa'),
+    output:
+        flag = jpath(ROOTDIR, '{species}', '_flag',
+                     flag_fname_code.format(sp='{species}', org='{org}',
+                                            asb='{assembly}',
+                                            rel='{release_id}',
+                                            task='alignerIndex-Bowtie2')),
+    threads: 42
+    run:
+        savetodir = jpath(ROOTDIR, wildcards.species, 'aligner_index',
+                          'bowtie2', wildcards.org,
+                          wildcards.assembly,
+                          'release_{}'.format(wildcards.release_id))
+        build_prefix = jpath(savetodir, base_name(input.fa, ext='fa'))
+        shell("""
+            bowtie2-build {input.fa} {build_prefix} \
+            --threads {threads} \
+            --seed 42 \
+            && touch {output.flag}
+            """)
+        print_logger('Prefix of bowtie2 index is: {}'.format(build_prefix))
+
+
+rule task_aligner_index_bowtie2:
+    input:
+        rules.setup_folder.output.dir_bowtie,
+        expand(jpath(ROOTDIR, '{species}', '_flag',
+                     flag_fname_code.format(sp='{species}', org='{org}',
+                                            asb='{assembly}',
+                                            rel='{release_id}',
+                                            task='alignerIndex-Bowtie2')),
+               zip, species=SPECIES, org=ORG,
+               assembly=ASSEMBLY, release_id=RELEASE),
+
+
+'''
+Build index of aligner - STAR
+'''
+rule cook_aligner_index_star:
+    input:
+        fa = jpath(ROOTDIR, '{species}', 'genome', '{org}',
+                   '{assembly}', 'release_' + '{release_id}',
+                   'genome.fa'),
+        anno = jpath(ROOTDIR, '{species}', 'annotation', '{org}',
+                     '{assembly}', 'release_' + '{release_id}',
+                     'anno_link'),
+    output:
+        flag = jpath(ROOTDIR, '{species}', '_flag',
+                     flag_fname_code.format(sp='{species}', org='{org}',
+                                            asb='{assembly}',
+                                            rel='{release_id}',
+                                            task='alignerIndex-STAR')),
+    threads: 42
+    run:
+        shell('STAR --version')
+        savetodir = jpath(ROOTDIR, wildcards.species, 'aligner_index',
+                          'star', wildcards.org,
+                          wildcards.assembly,
+                          'release_{}'.format(wildcards.release_id))
+        outFileNamePrefix = savetodir + os.sep
+        shell('''
+            STAR --runThreadN {threads} \
+            --runMode genomeGenerate \
+            --genomeDir {savetodir} \
+            --genomeFastaFiles {input.fa} \
+            --sjdbGTFfile {input.anno} \
+            --outFileNamePrefix {outFileNamePrefix} \
+            && touch {output.flag}
+        ''')
+
+
+rule task_aligner_index_star:
+    input:
+        rules.setup_folder.output.dir_star,
+        expand(jpath(ROOTDIR, '{species}', '_flag',
+                     flag_fname_code.format(sp='{species}', org='{org}',
+                                            asb='{assembly}',
+                                            rel='{release_id}',
+                                            task='alignerIndex-STAR')),
+               zip, species=SPECIES, org=ORG,
+               assembly=ASSEMBLY, release_id=RELEASE),
