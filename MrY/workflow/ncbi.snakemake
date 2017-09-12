@@ -1,7 +1,8 @@
 import sys
 import os
 import yaml
-from ftplib import FTP
+from snakemake.remote.FTP import RemoteProvider as FTPRemoteProvider
+FTP = FTPRemoteProvider()
 
 from MrY import join_path as jpath
 from MrY import base_name, dir_name
@@ -20,7 +21,7 @@ RELEASE = config.get('release')
 ROOTDIR = config.get('root_dir')
 ORG = config.get('org')
 
-REMOTE_GENOME_FPATH_CODE = config.get('LINK_FASTA')
+REMOTE_GENOME_FPATH_CODE = config.get('LINK_GENOME')
 REMOTE_ANNO_FPATH_CODE = config.get('LINK_ANNOTATION')
 
 flag_fname_code = '_{sp}_{org}_{asb}_{rel}_done_{task}'
@@ -131,82 +132,116 @@ rule setup_folder:
 '''
 Download GTF or GFF3 of annotation
 '''
-# rule download_annotation:
-#     # input:
-#     #     flag = jpath(ROOTDIR, '{species}', '_flag',
-#     #                  flag_fname_code.format(sp='{species}', org='{org}',
-#     #                                         asb='{assembly}',
-#     #                                         rel='{release_id}',
-#     #                                         task='setupdir')),
-#     output:
-#         anno = jpath(ROOTDIR, '{species}', 'annotation', '{org}',
-#                      '{assembly}', 'release_{release_id}',
-#                      base_name('{annogz}')),
-#         flag = jpath(ROOTDIR, '{species}', '_flag',
-#                      flag_fname_code.format(
-#                          sp='{species}', org='{org}',
-#                          asb='{assembly}',
-#                          rel='{release_id}',
-#                          task='download-') + base_name('{annogz}')),
-#     run:
-#         remote_anno = wildcards.annogz
-#         print(remote_anno)
-#         print(output.anno)
-#         shell(
-#             """
-#             wget {remote_anno} -O {output.anno} -nv && \
-#             touch {output.flag}
-#             """)
-#         print_logger('Download annotation: {} to {}'.format(
-#             remote_anno, output.gtf))
-
-
-# rule zcat_anno_gz:
-#     input:
-#         anno = jpath(ROOTDIR, '{species}', 'annotation', '{org}',
-#                      '{assembly}', 'release_{release_id}',
-#                      base_name('{annogz}')),
-#         # anno = rules.download_annotation.output.anno,
-#     output:
-#         anno = jpath(ROOTDIR, '{species}', 'annotation', '{org}',
-#                      '{assembly}', 'release_{release_id}',
-#                      base_name('{annogz}', ext='gz')),
-#         flag = jpath(ROOTDIR, '{species}', '_flag',
-#                      flag_fname_code.format(
-#                          sp='{species}', org='{org}',
-#                          asb='{assembly}',
-#                          rel='{release_id}',
-#                          task='gunzipped-') + base_name('{annogz}', ext='gz')),
-#     run:
-#         shell('''
-#             zcat -f {input.anno} > {output.anno} && \
-#             touch {output.flag}''')
-
-
 rule task_annotation:
     input:
-        rules.setup_folder.output.flags
+        # anno = [FTP.remote(x) for x in REMOTE_ANNO_FPATH_CODE],
+        flags = expand(jpath(ROOTDIR, '{species}', '_flag',
+                             flag_fname_code.format(
+                                 sp='{species}',
+                                 org='{org}',
+                                 asb='{assembly}',
+                                 rel='{release_id}',
+                                 task='setupdir')),
+                       zip,
+                       species=SPECIES,
+                       org=ORG,
+                       assembly=ASSEMBLY,
+                       release_id=RELEASE),
     output:
-        gtfgz = expand(jpath(ROOTDIR, '{species}', 'annotation', '{org}',
-                             '{assembly}', 'release_{release_id}',
-                             base_name('{annogz}')),
+        flags = expand(jpath(ROOTDIR, '{species}', '_flag',
+                             flag_fname_code.format(
+                                 sp='{species}',
+                                 org='{org}',
+                                 asb='{assembly}',
+                                 rel='{release_id}',
+                                 task='gunzipped-annotation')),
+                       zip,
+                       species=SPECIES,
+                       org=ORG,
+                       assembly=ASSEMBLY,
+                       release_id=RELEASE),
+    run:
+        for remote_anno_gz, species, org, assembly, release_id in zip(
+                REMOTE_ANNO_FPATH_CODE, SPECIES, ORG, ASSEMBLY, RELEASE):
+            anno_fname = base_name(remote_anno_gz, auto=False)
+            if '.gtf.gz' in anno_fname.lower():
+                local_fname = 'annotation.gtf.gz'
+            elif ('.gff.gz' in anno_fname.lower() or
+                  '.gff3.gz' in anno_fname.lower()):
+                local_fname = 'annotation.gff3.gz'
+            else:
+                local_fname = base_name(remote_anno_gz)
+            local_anno_gz = jpath(ROOTDIR, species, 'annotation',
+                                  org, assembly,
+                                  'release_{}'.format(release_id),
+                                  local_fname)
+            local_anno = jpath(dir_name(local_anno_gz),
+                               base_name(local_anno_gz, ext='gz'))
+            flag1 = jpath(ROOTDIR, species, '_flag', flag_fname_code.format(
+                sp=species, org=org,
+                asb=assembly, rel=release_id, task='download_annotation'))
+            flag2 = jpath(ROOTDIR, species, '_flag', flag_fname_code.format(
+                sp=species, org=org,
+                asb=assembly, rel=release_id, task='gunzipped-annotation'))
+            shell('''
+            wget {remote_anno_gz} -O {local_anno_gz} -nv && \
+            zcat {local_anno_gz} > {local_anno} && \
+            touch {flag1} {flag2}
+            ''')
+
+'''
+Download FASTA of genome
+'''
+rule task_genome_fasta:
+    input:
+        flags = expand(jpath(ROOTDIR, '{species}', '_flag',
+                             flag_fname_code.format(
+                                 sp='{species}', org='{org}',
+                                 asb='{assembly}', rel='{release_id}',
+                                 task='setupdir')),
                        zip,
                        species=SPECIES, org=ORG,
-                       assembly=ASSEMBLY, release_id=RELEASE,
-                       annogz=REMOTE_ANNO_FPATH_CODE),
-        gtf = expand(jpath(ROOTDIR, '{species}', 'annotation', '{org}',
-                           '{assembly}', 'release_{release_id}',
-                           base_name('{annogz}', ext='gz')),
-                     zip,
-                     species=SPECIES, org=ORG,
-                     assembly=ASSEMBLY, release_id=RELEASE,
-                     annogz=REMOTE_ANNO_FPATH_CODE),
+                       assembly=ASSEMBLY, release_id=RELEASE),
+    output:
+        flags = expand(jpath(ROOTDIR, '{species}', '_flag',
+                             flag_fname_code.format(
+                                 sp='{species}', org='{org}',
+                                 asb='{assembly}', rel='{release_id}',
+                                 task='download-genomeFasta')),
+                       zip,
+                       species=SPECIES, org=ORG,
+                       assembly=ASSEMBLY, release_id=RELEASE),
+        fagz = expand(jpath(ROOTDIR, '{species}', 'genome', '{org}',
+                            '{assembly}', 'release_' + '{release_id}',
+                            'genome.fa.gz'),
+                      zip,
+                      species=SPECIES, org=ORG,
+                      assembly=ASSEMBLY, release_id=RELEASE),
+        fa = expand(jpath(ROOTDIR, '{species}', 'genome', '{org}',
+                          '{assembly}', 'release_' + '{release_id}',
+                          'genome.fa'),
+                    zip,
+                    species=SPECIES, org=ORG,
+                    assembly=ASSEMBLY, release_id=RELEASE),
     run:
-        for remote_anno, local_anno_gz, local_anno in zip(
-                REMOTE_ANNO_FPATH_CODE,
-                output.gtfgz,
-                output.gtf):
+        print(REMOTE_GENOME_FPATH_CODE)
+        for remote_fa_gz, species, org, assembly, release_id in zip(
+                REMOTE_GENOME_FPATH_CODE, SPECIES, ORG, ASSEMBLY, RELEASE):
+            local_fname = 'genome.fa.gz'
+            local_fa_gz = jpath(ROOTDIR, species, 'genome',
+                                org, assembly,
+                                'release_{}'.format(release_id),
+                                local_fname)
+            local_fa = jpath(dir_name(local_fa_gz),
+                             base_name(local_fa_gz, ext='gz'))
+            flag1 = jpath(ROOTDIR, species, '_flag', flag_fname_code.format(
+                sp=species, org=org,
+                asb=assembly, rel=release_id, task='download-genomeFasta'))
+            flag2 = jpath(ROOTDIR, species, '_flag', flag_fname_code.format(
+                sp=species, org=org,
+                asb=assembly, rel=release_id, task='gunzipped-genomeFasta'))
             shell('''
-                wget {remote_anno} -O {local_anno_gz} -nv && \
-                zcat -f {local_anno} > {local_anno} && \
+            wget {remote_fa_gz} -O {local_fa_gz} -nv && \
+            zcat {local_fa_gz} > {local_fa} && \
+            touch {flag1} {flag2}
             ''')

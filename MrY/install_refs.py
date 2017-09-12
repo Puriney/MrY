@@ -12,7 +12,7 @@ def main(args):
         args.assembly = receipt.get('assembly', [])
         args.org = receipt.get('org', [])
         args.release = receipt.get('release', [])
-        args.LINK_FASTA = receipt.get('LINK_FASTA', [])
+        args.LINK_GENOME = receipt.get('LINK_GENOME', [])
         args.LINK_ANNOTATION = receipt.get('LINK_ANNOTATION', [])
         snakefile = get_workflow_fpath(fname='ncbi.snakemake')
     else:
@@ -38,7 +38,7 @@ def main(args):
                 'assembly': args.assembly,
                 'org': args.org,
                 'release': args.release,
-                'LINK_FASTA': args.LINK_FASTA,
+                'LINK_GENOME': args.LINK_GENOME,
                 'LINK_ANNOTATION': args.LINK_ANNOTATION},
 
         printshellcmds=True,
