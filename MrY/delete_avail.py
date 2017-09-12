@@ -2,6 +2,7 @@
 Delete available installations at root_dir
 '''
 import glob
+import os
 from MrY import join_path as jpath
 from MrY import rmfile, rmfolder, print_logger
 
@@ -15,7 +16,7 @@ def delete_avail(args):
     release = args.get('release')[0]
 
     delete_flag_only = args.get('soft')
-    ROOTDIR = args.get('root_dir', '.')
+    ROOTDIR = args.get('root_dir', './').rstrip(os.sep)
 
     task = args.get('target')[0]
 
