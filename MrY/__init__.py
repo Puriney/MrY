@@ -36,6 +36,9 @@ TARGETS_SUPPORTED = ['task_genome_fasta',
 - Group input/output: https://docs.python.org/3/library/argparse.html#argument-groups
 '''
 
+def do_new_receipt(args):
+    new_installation_receipt(args.saveto)
+
 
 def do_install(args):
     if (not args.root_dir) or \
@@ -149,16 +152,17 @@ def get_argument_parser():
         default=0)
 
     subparsers = parser.add_subparsers(title='Subcommands')
-    # Install Receipt
+    # New Receipt for Installation
     parser_receipt = subparsers.add_parser(
         'new-receipt',
-        parent=[parser],
+        parents=[parser],
         usage='yun new-receipt -o FILE',
         help='New receipt for installation of references')
     parser_receipt.add_argument(
         '-o', '--saveto',
         default='install_receipt_ncbi.yaml', type=str, metavar='FILENAME',
-        help='Save receipt of installation to file.' )
+        help='Save receipt of installation to file.')
+    parser_receipt.set_defaults(func=do_new_receipt)
     # Install
     parser_install = subparsers.add_parser(
         'install',
