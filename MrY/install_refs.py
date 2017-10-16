@@ -5,6 +5,11 @@ from snakemake import snakemake
 
 
 def main(args):
+    snake_config = {'root_dir': args.root_dir,
+                    'species': args.species,
+                    'assembly': args.assembly,
+                    'org': args.org,
+                    'release': args.release}
     if args.receipt:
         print_logger('yun install NCBI... ')
         receipt = load_installation_receipt(fpath=args.receipt)
@@ -15,6 +20,9 @@ def main(args):
         args.LINK_GENOME = receipt.get('LINK_GENOME', [])
         args.LINK_ANNOTATION = receipt.get('LINK_ANNOTATION', [])
         snakefile = get_workflow_fpath(fname='ncbi.snakemake')
+        snake_config.update({
+            'LINK_GENOME': args.LINK_GENOME,
+            'LINK_ANNOTATION': args.LINK_ANNOTATION})
     else:
         if 'GENCODE' in args.org:
             print_logger('yun install GENCODE...')
@@ -33,13 +41,7 @@ def main(args):
         targets=args.target,
 
         # configfile=args.config_file,
-        config={'root_dir': args.root_dir,
-                'species': args.species,
-                'assembly': args.assembly,
-                'org': args.org,
-                'release': args.release,
-                'LINK_GENOME': args.LINK_GENOME,
-                'LINK_ANNOTATION': args.LINK_ANNOTATION},
+        config=snake_config,
 
         printshellcmds=True,
         printreason=True,
