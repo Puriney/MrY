@@ -76,8 +76,11 @@ def do_delete(args):
             (not args.release):
         print('Specify species + assembly + org + release to delete. ')
         return
-
     delete_avail(args)
+
+
+def do_merge(args):
+    return
 
 
 def get_argument_parser():
@@ -219,8 +222,22 @@ def get_argument_parser():
         default='all', choices=TARGETS_SUPPORTED, nargs=1,
         help=('Target to delete. '))
     parser_delete.set_defaults(func=do_delete)
+    # Merge
+    parser_merge = subparsers.add_parser(
+        'merge',
+        parents=[parser],
+        help=('Merge more than one genomes'))
+    parser_merge.add_argument(
+        '--fasta',
+        default=[],
+        help=('Genome fasta files of genomes to be merged.'))
+    parser_merge.add_argument(
+        '--annotation',
+        default=[],
+        help=('GTF/GFF3 files of genomes to be merged.'))
+    parser_merge.set_defaults(func=do_merge)
 
-    return(parser)
+    return parser
 
 
 def main():
