@@ -13,16 +13,16 @@ def main(args):
     if args.receipt:
         print_logger('yun install NCBI... ')
         receipt = load_installation_receipt(fpath=args.receipt)
-        args.species = receipt.get('species', [])
-        args.assembly = receipt.get('assembly', [])
-        args.org = receipt.get('org', [])
-        args.release = receipt.get('release', [])
-        args.LINK_GENOME = receipt.get('LINK_GENOME', [])
-        args.LINK_ANNOTATION = receipt.get('LINK_ANNOTATION', [])
+        snake_config['species'] = receipt.get('species', [])
+        snake_config['assembly'] = receipt.get('assembly', [])
+        snake_config['org'] = receipt.get('org', [])
+        snake_config['release'] = receipt.get('release', [])
+        snake_config['LINK_GENOME'] = receipt.get('LINK_GENOME', [])
+        snake_config['LINK_ANNOTATION'] = receipt.get('LINK_ANNOTATION', [])
         snakefile = get_workflow_fpath(fname='ncbi.snakemake')
-        snake_config.update({
-            'LINK_GENOME': args.LINK_GENOME,
-            'LINK_ANNOTATION': args.LINK_ANNOTATION})
+        # snake_config.update({
+        #     'LINK_GENOME': args.LINK_GENOME,
+        #     'LINK_ANNOTATION': args.LINK_ANNOTATION})
     else:
         if 'GENCODE' in args.org:
             print_logger('yun install GENCODE...')
