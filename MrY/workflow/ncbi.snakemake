@@ -117,10 +117,9 @@ rule setup_folder:
     run:
         for d in [output.dir_genome, output.dir_annotation, output.dir_bowtie,
                   output.dir_star, output.dir_flag]:
-            if not os.path.isdir(d):
-                shell('mkdir -p {d}')
+            shell('mkdir -p {}'.format(d))
         for f in output.flags:
-            shell('touch {f}')
+            shell('touch {}'.format(f))
 
 
 '''

@@ -34,7 +34,8 @@ def main(args):
             pass
 
     if args.verbose >= 5:
-        print(args)
+        print('Running Parameters:')
+        print(snake_config)
 
     success = snakemake(
         snakefile=snakefile,

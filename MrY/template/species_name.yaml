@@ -6,7 +6,7 @@ common_scientific_name_pairs:
   brewer_yeast: saccharomyces_cerevisiae
   mycobacterium_tuberculosis: mycobacterium_tuberculosis
   salmonella_SL1344: Salmonella_enterica_subsp.enterica_serovar_Typhimurium_str.SL1344
-  staph_USA300: Staphylococcus_aureus_subsp.aureus_USA300_TCH1516_Strain
+  staph_USA300_FPR3757: Staphylococcus_aureus_subsp.aureus_USA300_FPR3757
 
 
 assembly_pairs:
@@ -22,8 +22,8 @@ assembly_pairs:
     - R64-1-1
   salmonella_SL1344:
     - ASM21085v2
-  staph_USA300:
-    - GCA_000017085.1
+  staph_USA300_FPR3757:
+    - ASM1346v1
 
 
 supported_orgs:
