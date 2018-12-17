@@ -4,7 +4,7 @@ import yaml
 from snakemake import snakemake
 from .helper import base_name, dir_name, join_path
 from .helper import is_nonempty_file, print_logger, ymd
-from .helper import rmfile, rmfolder
+from .helper import rmfile, rmfolder, mkfolder
 from .version import __version__
 from .locate_workflow import get_workflow_fpath
 from .locate_preset import get_species_name_fpath

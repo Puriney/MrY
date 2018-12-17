@@ -1,5 +1,5 @@
 from MrY import join_path as jpath
-from MrY import base_name, dir_name
+from MrY import base_name, dir_name, mkfolder
 from MrY import print_logger
 from MrY import get_species_name_fpath
 import sys
@@ -388,6 +388,7 @@ rule cook_aligner_index_bowtie2:
                           'bowtie2', ORG,
                           wildcards.assembly,
                           'release_{}'.format(wildcards.release_id))
+	mkfolder(savetodir)
         build_prefix = jpath(savetodir, base_name(input.fa, ext='fa'))
         shell("""
             bowtie2-build {input.fa} {build_prefix} \
@@ -428,6 +429,7 @@ rule cook_aligner_index_star:
                           'star', ORG,
                           wildcards.assembly,
                           'release_{}'.format(wildcards.release_id))
+	mkfolder(savetodir)
         outFileNamePrefix = savetodir + os.sep
         shell('''
             STAR --runThreadN {threads} \
