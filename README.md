@@ -1,4 +1,4 @@
-# MrY -- :books: Management of references at Yanai lab
+# MrY -- :books: Management of references for yourself
 
 ## Why this mini-manager?
 
