@@ -46,7 +46,6 @@ def main(args):
 
         printshellcmds=True,
         printreason=True,
-        timestamp=True,
         latency_wait=1800,
         jobname="MrY.{rulename}.{jobid}.sh",
 
