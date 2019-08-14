@@ -13,7 +13,7 @@ here = path.abspath(path.dirname(__file__))
 description = ('Mr.Y -- Management of references at YanaiLab')
 
 install_requires = [
-    'snakemake>=4.0.0',
+    'snakemake>=4.0.0, <6',
     'pyyaml>=3.12',
     'tabulate>=0.7',
 ]
