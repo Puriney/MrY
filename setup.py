@@ -14,7 +14,7 @@ description = ('Mr.Y -- Management of references at YanaiLab')
 
 install_requires = [
     'snakemake>=4.0.0',
-    'pyyaml>=3.12, <4',
+    'pyyaml>=3.12',
     'tabulate>=0.7',
 ]
 
